@@ -23,9 +23,11 @@ if not os.path.exists('/dev/shm/semueller/asr/npy/data_mfccs.npy'):
 
     data_mfccs = np.array(data_mfccs)
     np.save('/dev/shm/semueller/asr/npy/data_mfccs', data_mfccs)
+    sys.exit(-42)
 else:
     print('load mfccs')
-    data_mfccs = np.load('/dev/shm/semueller/asr/npy/data_mfccs.npy')
+#    data_mfccs = np.load('./mfccs/data_mfccs.npy')
+    data_mfccs = np.load('./mfccs/data_mfccs_out_50.npy')
 d = np.zeros(tuple([data_mfccs.shape[0]]*2))
 samples = data_mfccs.shape[0]
 size_d = samples**2

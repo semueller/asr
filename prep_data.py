@@ -74,18 +74,20 @@ def build_subset(path_npy = None, label_idxs = None, samples_per_class = 100, ou
 
     if output_filename is None:
         filename = path_npy.split('/')[-1].split('.')[0]
-        output_filename = filename + 'out'
+        output_filename = filename + '_out_{}'.format(samples_per_class)
 
     data = np.load(path_npy)
     print('data.shape: {}'.format(data.shape))
 
-    res = np.empty((1,)+data.shape[1:])
+    res = np.empty((0,)+data.shape[1:])
 
     for idx in label_idxs:
-        print('range {}:{}'.format(idx, idx+samples_per_class))
-        res = np.concatenate((res,data[idx:idx+samples_per_class]), 0)
+        d = data[idx:idx+samples_per_class]
+        print('range {}:{}, d shape {}'.format(idx, idx+samples_per_class, d.shape))
+        res = np.concatenate((res,d), 0)
 
-    np.save(output_filename, res)
+    print('output size {}'.format(res.shape))
+    np.save('./mfccs/'+output_filename, res)
 
 
 if __name__ == '__main__':
@@ -97,7 +99,7 @@ if __name__ == '__main__':
 
     idxs = [0]
     running_idx = 0
-    for line in lines[1:]:
+    for line in lines[1:-1]:
         print(line)
         line = line.split(',')
         label = line[0]
@@ -105,4 +107,4 @@ if __name__ == '__main__':
         running_idx += num_samples
         idxs.append(running_idx)
 
-    build_subset('/dev/shm/semueller/asr/npy/data_mfccs.npy', idxs)
+    build_subset('/dev/shm/semueller/asr/npy/data_mfccs.npy', idxs, samples_per_class=50)
