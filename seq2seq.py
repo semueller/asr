@@ -20,6 +20,7 @@ def load():
 
 
     path = '/dev/shm/semueller/asr/npy/'
+    set = 'train_data_out_60.npy'
 
     if os.path.exists(path+'train_data.npy') and os.path.exists(path+'train_label.npy'):
         train_data = np.load(path+'train_data.npy')

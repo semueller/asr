@@ -87,7 +87,7 @@ def build_subset(path_npy = None, label_idxs = None, samples_per_class = 100, ou
         res = np.concatenate((res,d), 0)
 
     print('output size {}'.format(res.shape))
-    np.save('./mfccs/'+output_filename, res)
+    np.save('/dev/shm/semueller/asr/npy/'+output_filename, res)
 
 
 if __name__ == '__main__':
@@ -107,4 +107,5 @@ if __name__ == '__main__':
         running_idx += num_samples
         idxs.append(running_idx)
 
-    build_subset('/dev/shm/semueller/asr/npy/data_mfccs.npy', idxs, samples_per_class=50)
+    build_subset('/dev/shm/semueller/asr/npy/train_label.npy', idxs, samples_per_class=60)
+
