@@ -8,7 +8,7 @@ from tensorflow.keras.layers import Input, LSTM, RepeatVector
 from tensorflow.keras.models import Model
 from tensorflow.keras.callbacks import ModelCheckpoint
 
-latent_dim = 20
+latent_dim = 60
 timesteps = 16000
 input_dim = 1
 
@@ -39,9 +39,9 @@ def load():
         class_ranges = [x for x in range(0, num_samples, samples_per_class)]
         for r in class_ranges:
             dtrd = d[r:r+spc_train]
-            dted = d[r+spc_test : r+samples_per_class]
+            dted = d[r+spc_train: r+samples_per_class]
             dtrl = l[r:r+spc_train]
-            dtel = l[r+spc_test : r+samples_per_class]
+            dtel = l[r+spc_train : r+samples_per_class]
 
             train_data = np.concatenate((train_data, dtrd), 0)
             test_data = np.concatenate((test_data, dted), 0)
