@@ -77,28 +77,32 @@ def build_subset(path_npy = None, label_idxs = None, samples_per_class = 100, ou
         output_filename = filename + 'out'
 
     data = np.load(path_npy)
+    print('data.shape: {}'.format(data.shape))
 
     res = np.empty((1,)+data.shape[1:])
 
     for idx in label_idxs:
+        print('range {}:{}'.format(idx, idx+samples_per_class))
         res = np.concatenate((res,data[idx:idx+samples_per_class]), 0)
 
     np.save(output_filename, res)
 
 
 if __name__ == '__main__':
-
     # merge_set(sys.argv)
 
-    with open('./mfccs/labelranges.txt','r') as file:
-        file.readline()
-        idxs = [0]
-        running_idx = 0
-        for line in file.readline():
-            line = line.split(',')
-            label = line[0]
-            num_samples = int(line[1])
-            running_idx += num_samples
-            idxs.append(running_idx)
 
-        build_subset('/dev/shm/semueller/asr/npy/data_mfccs.npy', idxs)
+    with open('./mfccs/labelranges.txt','r') as file:
+        lines = file.readlines()
+
+    idxs = [0]
+    running_idx = 0
+    for line in lines[1:]:
+        print(line)
+        line = line.split(',')
+        label = line[0]
+        num_samples = int(line[1])
+        running_idx += num_samples
+        idxs.append(running_idx)
+
+    build_subset('/dev/shm/semueller/asr/npy/data_mfccs.npy', idxs)
