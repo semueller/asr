@@ -3,10 +3,9 @@ from scipy.io import wavfile as wav
 import os
 import sys
 
-if __name__ == '__main__':
-
-    if len(sys.argv) > 1:
-        path = sys.argv[1].split('/')
+def merge_set(argv = None):
+    if len(argv) > 1:
+        path = argv[1].split('/')
     else:
         path = './data/tf'.split('/')
     prefix = '/'.join(path[:-1])
@@ -68,3 +67,38 @@ if __name__ == '__main__':
         # print(ones[0].shape)
         # ones = ones.reshape(ones.sha [1] for f in files['one']])
     pass
+
+def build_subset(path_npy = None, label_idxs = None, samples_per_class = 100, output_filename=None):
+    assert path_npy is not None
+    assert label_idxs is not None
+
+    if output_filename is None:
+        filename = path_npy.split('/')[-1].split('.')[0]
+        output_filename = filename + 'out'
+
+    data = np.load(path_npy)
+
+    res = np.empty((1,)+data.shape[1:])
+
+    for idx in label_idxs:
+        res = np.concatenate((res,data[idx:idx+samples_per_class]), 0)
+
+    np.save(output_filename, res)
+
+
+if __name__ == '__main__':
+
+    # merge_set(sys.argv)
+
+    with open('./mfccs/labelranges.txt','r') as file:
+        file.readline()
+        idxs = [0]
+        running_idx = 0
+        for line in file.readline():
+            line = line.split(',')
+            label = line[0]
+            num_samples = int(line[1])
+            running_idx += num_samples
+            idxs.append(running_idx)
+
+        build_subset('/dev/shm/semueller/asr/npy/data_mfccs.npy', idxs)
