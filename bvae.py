@@ -258,6 +258,7 @@ if __name__ == '__main__':
     l = F.binary_cross_entropy
     # l = F.hinge_embedding_loss
     bvae = bVAE(encoder, decoder, latent_dim=latent_dim, recon_loss=l)
+    bvae.to(device)
     print(bvae.extra_repr())
     print("fit bvae")
     history = bvae.fit(x_train, x_train, n_epochs=100, batch_size=128)
