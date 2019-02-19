@@ -30,11 +30,13 @@ def main(save_prefix='./model'):
 
     device = check_for_gpu()
     x_train = x_train/255
-    if device.type == 'cuda':
-        print('data to {}'.format(device))
-        x_train = torch.tensor(x_train).to(device)
-    else:
-        x_train = torch.tensor(x_train).to(torch.float64)
+    def cast_data(x, device=device):
+        if device.type == 'cuda':
+            print('data to {}'.format(device))
+            x = torch.tensor(x).to(device)
+        else:
+            x = torch.tensor(x).to(torch.float64)
+        return x
 
     l = F.binary_cross_entropy
     # l = F.hinge_embedding_loss
@@ -43,7 +45,16 @@ def main(save_prefix='./model'):
     print(bvae.extra_repr())
 
     print("fit bvae")
-    history = bvae.fit(x_train, x_train, n_epochs=100, batch_size=128)
+    set_splits = 4
+    num_samples = len(x_train)
+    for i in range(set_splits):
+        start = (1/i)
+        end = start+(1/set_splits)
+        start = int(start*num_samples)
+        end = int(end*num_samples)
+        d = x_train[start:end]
+        d = cast_data(d)
+        history = bvae.fit(d, d, n_epochs=100, batch_size=128)
 
     print("saving model")
     path = save_prefix
