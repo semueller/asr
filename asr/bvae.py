@@ -165,8 +165,8 @@ class bVAE(nn.Module):
                 pass
             self.epochs_trained += 1
             history.append(torch.mean(torch.tensor(epoch_loss))/set_size)
-            loss_delta = history[-2] - history[-1]
-            if 0 <= loss_delta <= converging_threshold:
+            loss_delta = history[-2] - history[-1] if len(history)> 1 else -1
+            if 0 <= loss_delta and loss_delta <= converging_threshold:
                 print('\n RETURN AFTER {} EPOCHS with loss_delta: {} < {} '.format(n,loss_delta, converging_threshold))
                 break
             print('\nFINISHED EPOCH {}, avg loss: {}\n\n'.format(n, history[-1]))
