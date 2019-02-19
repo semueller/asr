@@ -1,18 +1,14 @@
-import os
 import sys
 import operator
 import functools
 
-
-
 import torch
-
 import torch.nn as nn
-from torch.nn.init import xavier_uniform as xavier_initializer
-from torch.nn import Linear
 import torch.nn.functional as F
 import torch.optim as optim
 from torch.nn.modules.utils import _pair
+
+from .util import save_model, load_model
 
 
 def calc_conv_out_dims(h_in, w_in, kernel, c_out=None, stride=1, padding=0, dilation=1):
@@ -109,12 +105,6 @@ class bVAE(nn.Module):
         self.epochs_trained = 0
         self.to(torch.double)
 
-
-    def sample(self, mu, log_var):
-        dim = self.latent_dim
-        eps = torch.rand(dim).to(torch.double)
-        return mu + torch.mul(eps, torch.exp(log_var / 2))
-
     def forward(self, x):
         mu_, log_var_ = self.encode(x)
         z = self.sample(mu_, log_var_)
@@ -136,6 +126,10 @@ class bVAE(nn.Module):
 
     def decode(self, z):
         return self.decoder.forward(z)
+
+    def sample(self, mu, log_var):
+        eps = torch.rand_like(log_var)
+        return mu + torch.mul(eps, torch.exp(log_var / 2))
 
     def bvae_loss(self, y_pred, y, z_mu, z_var):
         recon_loss = self.reconstruction_loss(y_pred, y, size_average=False)
@@ -188,40 +182,15 @@ class bVAE(nn.Module):
         p = '['+progr_sym*int(x+1)+' '*int(scale*100-x)+']'+progress
         print(p, end='\r', flush=True)
 
-
-def save_model(model, path='./', modelname='model'):
-    fullpath = os.path.join(path, modelname+'_state.tp')
-    print('saving model to {}'.format(fullpath))
-    if not os.path.exists(path):
-        os.mkdir(path)
-    checkpoint = {
-        'model': model,
-        'epoch': model.epochs_trained,
-        'state_dict': model.state_dict(),
-        'optimizer': model.optimizer.state_dict()
-    }
-    torch.save(checkpoint, fullpath)
-
-def load_model(path, modelname, inference_only=False):
-    fullpath = os.path.join(path, modelname+'_state'+'.tp')
-    state = torch.load(fullpath)
-    print('loaded checkpoint from {}'.format(fullpath))
-    print('loading model...')
-    model = state['model']
-    model.load_state_dict(state['state_dict'])
-    print('parameterize optimizer...')
-    model.optimizer.load_state_dict(state['optimizer'])
-    print('loading done')
-    return model
-
-
 if __name__ == '__main__':
+    '''
+    give root dir for mnist dataset as first argument, defaults to './data/test/'
+    '''
     print("Testing bVAE")
     print("import")
 
-    from torchvision.datasets import MNIST
     import numpy as np
-
+    from torchvision.datasets import MNIST
     print("loading MNIST")
 
     if len(sys.argv) > 1:
