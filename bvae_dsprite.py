@@ -40,21 +40,21 @@ def main(save_prefix='./model'):
 
     l = F.binary_cross_entropy
     # l = F.hinge_embedding_loss
-    bvae = bVAE(encoder, decoder, latent_dim=latent_dim, recon_loss=l)
+    bvae = bVAE(encoder, decoder, latent_dim=latent_dim, recon_loss=l, beta=4)
     bvae.to(device)
     print(bvae.extra_repr())
 
     print("fit bvae")
     set_splits = 4
     num_samples = len(x_train)
-    for i in range(set_splits):
-        start = (1/i)
+    for i in range(1, set_splits+1):
+        start = 1-(1/(i+1))
         end = start+(1/set_splits)
         start = int(start*num_samples)
         end = int(end*num_samples)
         d = x_train[start:end]
         d = cast_data(d)
-        history = bvae.fit(d, d, n_epochs=100, batch_size=128)
+        history = bvae.fit(d, d, n_epochs=100, batch_size=512)
 
     print("saving model")
     path = save_prefix
