@@ -12,6 +12,8 @@ setup(name='asr',
       packages=['asr'],
       url='http://github.com/semueller',
       license='GPL3',
-      install_requires=['torch>=1.0.1'],
+      install_requires=['torch>=1.0.1',
+			'scipy>=1.1.0',
+			'python-speech-features>=0.6'],
 )
 
