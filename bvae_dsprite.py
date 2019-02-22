@@ -40,7 +40,8 @@ def main(save_prefix='./model'):
 
     l = F.binary_cross_entropy
     # l = F.hinge_embedding_loss
-    bvae = bVAE(encoder, decoder, latent_dim=latent_dim, recon_loss=l, beta=4)
+    beta=1.0
+    bvae = bVAE(encoder, decoder, latent_dim=latent_dim, recon_loss=l, beta=beta)
     bvae.to(device)
     print(bvae.extra_repr())
 
@@ -58,7 +59,7 @@ def main(save_prefix='./model'):
 
     print("saving model")
     path = save_prefix
-    modelname = 'bvae_dsprite'
+    modelname = 'bvae_dsprite_{}'.format(beta)
     save_model(bvae, path=path, modelname=modelname)
 
 if __name__=='__main__':
