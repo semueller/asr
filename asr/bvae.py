@@ -8,7 +8,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 from torch.nn.modules.utils import _pair
 
-from .util import save_model, load_model
+# from .asr.util import save_model, load_model
 
 
 def calc_conv_out_dims(h_in, w_in, kernel, c_out=None, stride=1, padding=0, dilation=1):
@@ -117,7 +117,6 @@ class bVAE(nn.Module):
         # calc mus and log_var from input
         mu_ = self.mu(x_)
         log_var_ = self.log_var(x_)
-
         if self.activation_function is not None:
             mu_ = self.activation_function(mu_)
             log_var_ = self.activation_function(log_var_)
@@ -128,13 +127,15 @@ class bVAE(nn.Module):
         return self.decoder.forward(z)
 
     def sample(self, mu, log_var):
-        eps = torch.rand_like(log_var)
+        eps = torch.randn_like(log_var)  # rand_like samples uniformly from [0,1), randn_like samples from normal dist
+        # exp(log_var * 1/2) -> exp(log(sqrt(var))) -> sqrt(var) -> stddev
         return mu + torch.mul(eps, torch.exp(log_var / 2))
 
-    def bvae_loss(self, y_pred, y, z_mu, z_var):
+    def bvae_loss(self, y_pred, y, z_mu, z_log_var):
         recon_loss = self.reconstruction_loss(y_pred, y, size_average=False)
-        kl_loss = 0.5 * torch.sum(torch.exp(z_var) + z_mu ** 2 - 1. - z_var)
-        loss = recon_loss + self.beta*kl_loss*0
+        # Paper: dkl = 0.5 * sum ( 1+ log(stddev**2) - mu**2 - stddev**2)
+        dkl = 0.5 * torch.sum( 1. + z_log_var - z_mu ** 2 - torch.exp(z_log_var))
+        loss = recon_loss + self.beta*dkl
         return loss
 
     def fit(self, data, labels, n_epochs=100, batch_size=128, converging_threshold=-1.):
@@ -242,6 +243,6 @@ if __name__ == '__main__':
     del bvae
     print("test loading")
     bvae = load_model(path=path, modelname=modelname)
-    print("test bvae")
-    test_out = bvae.predict(x_test[:25])
+    # print("test bvae")
+    # test_out = bvae.predict(x_test[:25])
 
