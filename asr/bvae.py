@@ -224,7 +224,7 @@ if __name__ == '__main__':
     data_shape = tuple(x_train.shape[1:])
 
     print("build encoder/ decoder")
-    latent_dim = 20
+    latent_dim = 2
     encoder = ConvEncoder(in_shape=data_shape, out_dim=64)  # out_dim == dim of mu and dim of log_var
     decoder = ConvDecoder(in_dim=latent_dim, out_shape=data_shape, )
     print(encoder.extra_repr())
@@ -233,7 +233,7 @@ if __name__ == '__main__':
     print("build beta vae")
     l = F.mse_loss #F.binary_cross_entropy
     # l = F.hinge_embedding_loss
-    bvae = bVAE(encoder, decoder, latent_dim=latent_dim, recon_loss=l, beta=4, activation_function=None)
+    bvae = bVAE(encoder, decoder, latent_dim=latent_dim, recon_loss=l, beta=1, activation_function=None)
     if device.type == 'cuda':
         print('upload to {}'.format(device))
         bvae = bvae.to(device)
@@ -242,7 +242,7 @@ if __name__ == '__main__':
 
     print(bvae.extra_repr())
     print("fit bvae")
-    history = bvae.fit(x_train, x_train, n_epochs=100, batch_size=256)
+    history = bvae.fit(x_train, x_train, n_epochs=200, batch_size=256)
     print("saving model")
     path = '/dev/shm/semueller/asr/models_test'
     modelname = 'bvae_test'
