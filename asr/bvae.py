@@ -104,6 +104,8 @@ class bVAE(nn.Module):
         self.reconstruction_loss = recon_loss
         self.epochs_trained = 0
         self.to(torch.double)
+        if self.activation_function is not None:
+                print('bvae activation function set to {}'.format(self.activation_function))
 
     def forward(self, x):
         mu_, log_var_ = self.encode(x)
@@ -115,13 +117,11 @@ class bVAE(nn.Module):
         # convert x to flat vector
         x_ = self.encoder.forward(x)
         # calc mus and log_var from input
-        mu_ = self.activation_function(self.mu(x_))
-        log_var_ = self.activation_function(self.log_var(x_))
-#        if self.activation_function is not None:
-#            mu_ = self.activation_function(mu_)
-#            log_var_ = self.activation_function(log_var_)
-#            log_var_ = torch.nn.sigmoid(log_var_)
-#            mu_ = torch.nn.sigmoid(mu_)
+        mu_ = self.mu(x_)
+        log_var_ = self.log_var(x_)
+        if self.activation_function is not None:
+                log_var_ = self.activation_function(log_var_)
+                mu_ = self.activation_function(mu_)
 
         return mu_, log_var_
 
@@ -136,8 +136,8 @@ class bVAE(nn.Module):
     def bvae_loss(self, y_pred, y, z_mu, z_log_var):
         recon_loss = self.reconstruction_loss(y_pred, y, reduction='sum')
         # Paper: dkl = 0.5 * sum ( 1+ log(stddev**2) - mu**2 - stddev**2)
-        dkl = 0.5 * torch.mean( 1. + z_log_var - z_mu**2 - torch.exp(z_log_var)) # torch.sum
-        loss = recon_loss + self.beta*dkl
+        dkl_loss = - 0.5 * torch.sum( 1. + z_log_var - z_mu**2 - torch.exp(z_log_var))
+        loss = recon_loss + self.beta*dkl_loss
         return loss
 
     def fit(self, data, labels, n_epochs=100, batch_size=128, converging_threshold=-1.):
@@ -216,7 +216,7 @@ if __name__ == '__main__':
     train = MNIST(root=root_dir, download=True, train=True)
     test = MNIST(root=root_dir, download=True, train=False)
     # num_train_samples = len(train)
-    num_train_samples = 25000
+    num_train_samples = 60000
     x_train, y_train = train.train_data[:num_train_samples], train.train_labels[:num_train_samples]
     x_test, y_test = test.test_data, test.test_labels
     x_train = np.expand_dims(x_train, 1) / 255
@@ -224,7 +224,7 @@ if __name__ == '__main__':
     data_shape = tuple(x_train.shape[1:])
 
     print("build encoder/ decoder")
-    latent_dim = 9
+    latent_dim = 20
     encoder = ConvEncoder(in_shape=data_shape, out_dim=64)  # out_dim == dim of mu and dim of log_var
     decoder = ConvDecoder(in_dim=latent_dim, out_shape=data_shape, )
     print(encoder.extra_repr())
@@ -233,7 +233,7 @@ if __name__ == '__main__':
     print("build beta vae")
     l = F.mse_loss #F.binary_cross_entropy
     # l = F.hinge_embedding_loss
-    bvae = bVAE(encoder, decoder, latent_dim=latent_dim, recon_loss=l, beta=3, activation_function=torch.sigmoid)
+    bvae = bVAE(encoder, decoder, latent_dim=latent_dim, recon_loss=l, beta=4, activation_function=None)
     if device.type == 'cuda':
         print('upload to {}'.format(device))
         bvae = bvae.to(device)
@@ -242,7 +242,7 @@ if __name__ == '__main__':
 
     print(bvae.extra_repr())
     print("fit bvae")
-    history = bvae.fit(x_train, x_train, n_epochs=100, batch_size=512)
+    history = bvae.fit(x_train, x_train, n_epochs=100, batch_size=256)
     print("saving model")
     path = '/dev/shm/semueller/asr/models_test'
     modelname = 'bvae_test'
