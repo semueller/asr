@@ -8,7 +8,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 from torch.nn.modules.utils import _pair
 
-# from .asr.util import save_model, load_model
+from .asr.util import save_model, load_model
 
 
 def calc_conv_out_dims(h_in, w_in, kernel, c_out=None, stride=1, padding=0, dilation=1):
