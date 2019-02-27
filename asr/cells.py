@@ -7,15 +7,15 @@ from torch import nn
 import torch.nn.functional as F
 
 class Cell(nn.Module):
-    def __init__(self, in_dim, hidden_dim, out_dim, activation_function=F.tanh,
-                 activation_function_out=nn.relu, state_initializer=None):
+    def __init__(self, in_dim, hidden_dim, out_dim, activation_function=torch.tanh,
+                 activation_function_out=F.relu, state_initializer=None):
         super(Cell, self).__init__()
         self.in_dim = in_dim
         self.state_size = hidden_dim
         self.hidden_dim = hidden_dim
         self.out_dim = out_dim
-        self.activation_function = activation_function
-        self. act_out_fun = activation_function_out
+        self.act_fun = activation_function
+        self.act_fun_out = activation_function_out
         self.state_init = state_initializer
         self.a = None
         self.init_state()  # state
@@ -26,37 +26,41 @@ class Cell(nn.Module):
     def init_state(self, initializer=None):
         if self.state_init is not None:
             if callable(self.state_init):
-                self.a = self.state_init(self.hidden_dim)
+                self.a = self.state_init(1, self.hidden_dim)
                 assert self.hidden_dim in self.a.shape
             if isinstance(self.state_init, int):
-                self.a = torch.zeros(self.hidden_dim) + initializer
+                self.a = torch.zeros(1, self.hidden_dim) + initializer
         else:
-            self.a = torch.zeros(self.hidden_dim)
+            self.a = torch.zeros(1, self.hidden_dim)
 
+    def reset_state(self):
+        self.init_state()
 
 
 # Simple Recurrent Cell
 class RNN(Cell):
-    def __init__(self, in_dim, hidden_dim, out_dim, activation_function=F.tanh,
-                 activation_function_out=nn.relu, state_initializer=None):
+    def __init__(self, in_dim, hidden_dim, out_dim, activation_function=torch.tanh,
+                 activation_function_out=F.relu, state_initializer=None):
         # in_dim = number of featurse for one element of time series
         super(RNN, self).__init__(in_dim, hidden_dim, out_dim, activation_function=activation_function,
                  activation_function_out=activation_function_out, state_initializer=state_initializer)
         self.w_in = nn.Linear(in_features=self.state_size+in_dim,
-                              out_features=self.state_size+in_dim)
+                              out_features=self.state_size)
         self.w_y = nn.Linear(self.state_size, out_dim)
 
-    def forward(self, x, state):
-        ax = self.w_in(torch.cat((state, x)))
+    def forward(self, x, state=None):
+        if state is None:
+            state = self.a
+        ax = self.w_in(torch.cat((state, x), 1))
         new_state = self.act_fun(ax)
-        y = self.w_out(new_state)  # ? already use the new a here?
+        y = self.w_y(new_state)  # ? already use the new a here?
         y = self.act_fun_out(y)
         return y, new_state
 
 # GRU cell ???
 class GRU(Cell):
-    def __init__(self, in_dim, hidden_dim, out_dim, activation_function=F.tanh,
-                 activation_function_out=nn.relu, state_initializer=None):
+    def __init__(self, in_dim, hidden_dim, out_dim, activation_function=torch.tanh,
+                 activation_function_out=F.relu, state_initializer=None):
         # in_dim = number of featurse for one element of time series
         super(GRU, self).__init__(in_dim, hidden_dim, out_dim, activation_function=activation_function,
                  activation_function_out=activation_function_out, state_initializer=state_initializer)
@@ -85,8 +89,8 @@ class GRU(Cell):
 
 # LSTM cell
 class LSTM(Cell):
-    def __init__(self, in_dim, hidden_dim, out_dim, activation_function=F.tanh,
-                 activation_function_out=nn.relu, state_initializer=None):
+    def __init__(self, in_dim, hidden_dim, out_dim, activation_function=torch.tanh,
+                 activation_function_out=F.relu, state_initializer=None):
         super(LSTM, self).__init__(in_dim, hidden_dim, out_dim, activation_function=activation_function,
                  activation_function_out=activation_function_out, state_initializer=state_initializer)
         raise NotImplementedError('LSMT not implemented')
