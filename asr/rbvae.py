@@ -101,7 +101,7 @@ class RbVAE(nn.Module):
         loss = recon_loss + self.beta*dkl_loss
         return loss
 
-    def fit(self, data, labels, validate=0.0, n_epochs=100, batch_size=128, converging_threshold=-1., path='./'):
+    def fit(self, data, labels, validate=0.0, n_epochs=100, batch_size=128, converging_threshold=-1., path='./', periodic_save=0):
         history = []
         if type(data) is not torch.Tensor:
             data = torch.tensor(data)
@@ -143,6 +143,10 @@ class RbVAE(nn.Module):
                 print('avg loss {}'.format(performance))
                 if performance < best_perform:
                     best_perform = performance
+                    save_model(self, path, '{}'.format(self.__class__.__name__))
+            if periodic_save > 0:
+                if self.epochs_trained % periodic_save == 0:
+                    print('saving model')
                     save_model(self, path, '{}'.format(self.__class__.__name__))
 
 
