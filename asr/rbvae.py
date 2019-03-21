@@ -134,7 +134,7 @@ class RbVAE(nn.Module):
             history.append(torch.mean(torch.tensor(epoch_loss))/set_size)
             loss_delta = history[-2] - history[-1] if len(history)> 1 else -1
 
-            if validate is not 0:
+            if validate > 0:
                 num_validation_samples = int(len(data)*validate)  # floors
                 idxs = np.random.randint(0, len(data), num_validation_samples)
                 x, y = data[idxs], labels[idxs]
@@ -188,4 +188,4 @@ if __name__=='__main__':
     decoder = RecDecoder(input_size=latent_dim, hidden_size=hidden_size, out_dim=nfeatures)
     rbvae = RbVAE(encoder=encoder, decoder=decoder, latent_dim=latent_dim, beta=1.1)
     print('num params: {}'.format(rbvae.num_params))
-    rbvae.fit(X, X, batch_size=2, path='./models/', validate=0.5)
+    rbvae.fit(X, X, batch_size=2, path='./models/', validate=0.0) # don't validate, does duplicate data on gpu, inefficient and throws out of memory exception
