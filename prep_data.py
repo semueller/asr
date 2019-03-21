@@ -3,6 +3,8 @@ from scipy.io import wavfile as wav
 import os
 import sys
 
+import pickle as pkl
+
 def merge_set(argv = None):
     if len(argv) > 1:
         path = argv[1].split('/')
@@ -90,22 +92,72 @@ def build_subset(path_npy = None, label_idxs = None, samples_per_class = 100, ou
     np.save('/dev/shm/semueller/asr/npy/'+output_filename, res)
 
 
+def mfcc_to_datalabel(pth):
+    dic = pkl.load(open(pth, 'rb'))
+    data = None
+    labels = []
+    labelranges = []
+    for k, v in dic.items():
+        v = np.array(v)
+        v = normalize(v)
+        data = np.concatenate((data, v), 0) if data is not None else v
+        labels.extend([k]*len(v))
+        labelranges.append((k, len(labels)-len(v), len(labels)-1))
+    assert len(data) == len(labels)
+    return {'X': data,
+            'Y': labels,
+            'labelranges': labelranges}
+
+def normalize(x):
+    # normalizes such that each filter (ie each dim per feature vector) is normal distributed along time axis
+    for i in range(len(x)):
+        x[i] = (x[i] - np.mean(x[i]))/ np.std(x[i])
+    return x
+
+def fbank_to_datalabel(pth):
+    dic = pkl.load(open(pth, 'rb'))
+    data = None
+    labels = []
+    labelranges = []
+    for k, v in dic.items():
+        v = np.array([x[0] for x in v])
+        v = normalize(v)
+        data = np.concatenate((data, v), 0) if data is not None else v
+        labels.extend([k]*len(v))
+        labelranges.append((k, len(labels)-len(v), len(labels)-1))
+    assert len(data) == len(labels)
+    return {'X': data,
+            'Y': labels,
+            'labelranges': labelranges}
+
+
 if __name__ == '__main__':
     # merge_set(sys.argv)
+    #
+    #
+    # with open('./mfccs/labelranges.txt','r') as file:
+    #     lines = file.readlines()
+    #
+    # idxs = [0]
+    # running_idx = 0
+    # for line in lines[1:-1]:
+    #     print(line)
+    #     line = line.split(',')
+    #     label = line[0]
+    #     num_samples = int(line[1])
+    #     running_idx += num_samples
+    #     idxs.append(running_idx)
+    #
+    # build_subset('/dev/shm/semueller/asr/npy/train_label.npy', idxs, samples_per_class=60)
 
-
-    with open('./mfccs/labelranges.txt','r') as file:
-        lines = file.readlines()
-
-    idxs = [0]
-    running_idx = 0
-    for line in lines[1:-1]:
-        print(line)
-        line = line.split(',')
-        label = line[0]
-        num_samples = int(line[1])
-        running_idx += num_samples
-        idxs.append(running_idx)
-
-    build_subset('/dev/shm/semueller/asr/npy/train_label.npy', idxs, samples_per_class=60)
-
+    path = '/home/bing/sdb/words_{}.pkl'
+    files = [
+        'fbank', 'fbank_26',
+        'mfccs', 'logfbank'
+    ]
+    format = 1
+    merged = mfcc_to_datalabel(path.format(files[format])) if files[format] == 'mfccs' else fbank_to_datalabel(path.format(files[format]))
+    print(merged.keys(), merged['labelranges'])
+    with open('/home/bing/sdb/{}.pkl'.format(files[format]), 'wb') as f:
+        pkl.dump(merged, f)
+    sys.exit(42)
