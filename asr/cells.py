@@ -8,7 +8,7 @@ import torch.nn.functional as F
 
 
 class Cell(nn.Module):
-    def __init__(self, in_dim, hidden_dim, out_dim, activation_function=F.tanh,
+    def __init__(self, in_dim, hidden_dim, out_dim, activation_function=torch.tanh,
                  activation_function_out=F.relu, state_initializer=None):
         super(Cell, self).__init__()
         self.in_dim = in_dim
@@ -27,13 +27,16 @@ class Cell(nn.Module):
     def init_state(self, initializer=None):
         if self.state_init is not None:
             if callable(self.state_init):
-                self.a = self.state_init(self.hidden_dim)
+                self.a = self.state_init(1, self.hidden_dim)
                 assert self.hidden_dim in self.a.shape
             if isinstance(self.state_init, int):
-                self.a = torch.zeros(self.hidden_dim) + initializer
+                self.a = torch.zeros(1, self.hidden_dim) + initializer
         else:
-            self.a = torch.zeros(self.hidden_dim)
+            self.a = torch.zeros(1, self.hidden_dim)
         self.a.requires_grad = False
+
+    def reset_state(self):
+        self.init_state()
 
 
 # Simple Recurrent Cell
@@ -47,8 +50,10 @@ class RNN(Cell):
                               out_features=self.state_size)
         self.w_y = nn.Linear(self.state_size, out_dim)
 
-    def forward(self, x):
-        ax = self.w_in(torch.cat((self.a, x)))
+    def forward(self, x, state=None):
+        if state is None:
+            state = self.a
+        ax = self.w_in(torch.cat((state, x), 1))
         new_state = self.act_fun(ax)
         y = self.w_y(new_state)  # ? already use the new a here?
         y = self.act_fun_out(y)
