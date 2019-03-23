@@ -39,12 +39,12 @@ def main(data, model):
     with open(filename+'_idxs.dat', 'w') as f:
         f.write('train: \n {} \n test: \n {} \n'.format(idxs_train, idxs_test))
 
-    x_train = torch.tensor(x, dtype=torch.float)
+    x_train = torch.tensor(x[idxs_train], dtype=torch.float)
     del x
 
     latent_dim = 100
     hidden_size = 500
-    n_epochs = 2500
+    n_epochs = 1000
     encoder = RecEncoder(input_size=nfeatures, hidden_size=hidden_size, out_dim=int(latent_dim*1.5))
     decoder = RecDecoder(input_size=latent_dim, hidden_size=hidden_size, out_dim=nfeatures)
     rbvae = RbVAE(encoder=encoder, decoder=decoder, latent_dim=latent_dim, beta=1.1)

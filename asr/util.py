@@ -84,3 +84,38 @@ def compute_distance_matrix():
     print('saving')
     np.save('/dev/shm/semueller/asr/distances', d)
     print('done')
+
+
+def to_ranges(Y):
+    raise NotImplementedError()
+
+
+def get_subset(X, Y, samples_per_class=50, labelranges=None):
+    if labelranges is None:
+        labelranges = to_ranges(Y)
+
+    if type(Y) != np.ndarray:
+        Y = np.array(Y)
+
+    sub_x, sub_y = [], []
+
+    for c, start, end in labelranges:
+        idxs = np.random.randint(start, end, samples_per_class)
+        sub_x.append(X[idxs])
+        sub_y.append(Y[idxs])
+
+    sub_x = np.concatenate(tuple(sub_x), 0)
+    sub_y = np.concatenate(tuple(sub_y), 0)
+
+    return {
+        'X': sub_x,
+        'Y': sub_y
+            }
+
+
+# if __name__ == '__main__':
+    # import pickle as pkl
+    # print('test')
+    # d = pkl.load(open('/home/bing/sdb/mfccs.pkl', 'rb'))
+    # d_sub = get_subset(d['X'], d['Y'], labelranges=d['labelranges'])
+    # pass

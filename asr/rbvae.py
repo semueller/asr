@@ -42,12 +42,12 @@ class RecDecoder(nn.Module):
     def forward(self, x, seq_len):
         # t = 0
         h_t = nn.functional.tanh(self.fc_h0(x))  # compute initial state from embedding
-        x_t = self.fc_out(h_t)
+        x_t = nn.functional.leaky_relu(self.fc_out(h_t), negative_slope=0.04)
         out = [x_t]
         for i in range(seq_len-1):
             _, h_t = self.gru(torch.unsqueeze(x_t, 1), hx=torch.unsqueeze(h_t, 0))
             h_t = torch.squeeze(h_t, 0)
-            x_t = self.fc_out(h_t)
+            x_t = nn.functional.leaky_relu(self.fc_out(h_t), negative_slope=0.04)
             out.append(x_t)
         out = torch.stack(out, dim=1)
         return out
