@@ -44,6 +44,7 @@ def main(data, model):
 
     latent_dim = 100
     hidden_size = 500
+    n_epochs = 2500
     encoder = RecEncoder(input_size=nfeatures, hidden_size=hidden_size, out_dim=int(latent_dim*1.5))
     decoder = RecDecoder(input_size=latent_dim, hidden_size=hidden_size, out_dim=nfeatures)
     rbvae = RbVAE(encoder=encoder, decoder=decoder, latent_dim=latent_dim, beta=1.1)
@@ -53,8 +54,8 @@ def main(data, model):
     if device.type == 'cuda':
         x_train = x_train.to(device)
         rbvae = rbvae.to(device)
-    history = rbvae.fit(x_train, x_train, batch_size=256, validate=0.0, path=model, periodic_save=10) # don't validate for now, duplicates data on gpu which raises memory exception (and is inefficient)
-    modelname = '_'.join([rbvae.__class__.__name__, filename, str(latent_dim), str(hidden_size)])
+    history = rbvae.fit(x_train, x_train, n_epochs=n_epochs, batch_size=256, validate=0.0, path=model, periodic_save=10) # don't validate for now, duplicates data on gpu which raises memory exception (and is inefficient)
+    modelname = '_'.join([rbvae.__class__.__name__, filename, str(latent_dim), str(hidden_size), str(n_epochs)])
     save_model(rbvae, path=model, modelname=modelname)
     pass
 
