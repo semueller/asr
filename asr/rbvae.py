@@ -50,7 +50,7 @@ class RecDecoder(nn.Module):
             x_t = self.fc_out(h_t)
             out.append(x_t)
         out = torch.stack(out, dim=1)
-        return torch.tensor(out)
+        return out
 
 
 class RbVAE(nn.Module):
