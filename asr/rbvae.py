@@ -35,18 +35,22 @@ class RecEncoder(nn.Module):
 class RecDecoder(nn.Module):
     def __init__(self, input_size, hidden_size, out_dim, num_layers=1):
         super(RecDecoder, self).__init__()
-        self.fc1 = nn.Linear(in_features=input_size, out_features=256)
-        self.fc2 = nn.Linear(in_features=256, out_features=256)
-        self.gru = GRU(input_size=256, hidden_size=hidden_size, batch_first=True)
+        self.fc_h0 = nn.Linear(in_features=input_size, out_features=hidden_size)
+        self.gru = GRU(input_size=out_dim, hidden_size=hidden_size, batch_first=True)
         self.fc_out = nn.Linear(in_features=hidden_size, out_features=out_dim)
 
-    def forward(self, x, h_0, reps):
-        x = nn.functional.relu(self.fc1(x))
-        x = nn.functional.tanh(self.fc2(x))  # shape: batchsize features
-        x = x.unsqueeze(1).repeat((1, reps, 1))  # repeat 1xn dimensional x reps times along first dimension to get x.shape= repsxn
-        out, _ = self.gru(x, hx=h_0)
-        out = nn.functional.leaky_relu(self.fc_out(out), negative_slope=0.5)
-        return out
+    def forward(self, x, seq_len):
+        # t = 0
+        h_t = nn.functional.tanh(self.fc_h0(x))  # compute initial state from embedding
+        x_t = self.fc_out(h_t)
+        out = [x_t]
+        for i in range(seq_len-1):
+            _, h_t = self.gru(torch.unsqueeze(x_t, 1), hx=torch.unsqueeze(h_t, 0))
+            h_t = torch.squeeze(h_t, 0)
+            x_t = self.fc_out(h_t)
+            out.append(x_t)
+        out = torch.stack(out, dim=1)
+        return torch.tensor(out)
 
 
 class RbVAE(nn.Module):
@@ -70,8 +74,9 @@ class RbVAE(nn.Module):
 
     def forward(self, x):
         mu_, log_var_, h_n = self.encode(x)
+        seq_len = x.shape[1]
         z = self.sample(mu_, log_var_)
-        out = self.decode(z, h_n)
+        out = self.decode(z, seq_len)
         return out, (mu_, log_var_)
 
     def encode(self, x):
@@ -86,8 +91,12 @@ class RbVAE(nn.Module):
 
         return mu_, log_var_, h_n
 
-    def decode(self, z, state):
-        return self.decoder.forward(z, state, 99)
+    def embed(self, x):
+        mu_, log_var_, h_n = self.encode(x)
+        return mu_ + torch.exp(log_var_ /2)  # a 'sample' without epsilon
+
+    def decode(self, z, seq_len):
+        return self.decoder.forward(z, seq_len)
 
     def sample(self, mu, log_var):
         eps = torch.randn_like(log_var)  # rand_like samples uniformly from [0,1), randn_like samples from normal dist
@@ -181,7 +190,7 @@ class RbVAE(nn.Module):
 if __name__=='__main__':
     import pickle as pkl
 
-    data = pkl.load(open('/home/bing/sdb/mfccs_small.pkl', 'rb'))
+    data = pkl.load(open('/home/bing/sdb/testsets/mfccs_small.pkl', 'rb'))
     # print(data)
     X = torch.tensor(data['X'], dtype=torch.float)
     seqlen, nfeatures = X.shape[1:]
