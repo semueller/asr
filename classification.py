@@ -66,7 +66,7 @@ def main(data, model):
 
     if device.type == 'cuda':
         x_train = x_train.to(device)
-        y_train = x_train.to(device)
+        y_train = y_train.to(device)
         network = network.to(device)
 
     optim = Adam(network.parameters())
@@ -90,7 +90,7 @@ def main(data, model):
             loss = loss_fun(y_pred, y)
 
             if i/batch_size % 10 == 0:
-                print(f'epoch {epochs} {i}:{i+batch_size}/{n_samples} loss {loss}')
+                print(f'epoch {epochs} {i}:{i+batch_size}/{n_samples} loss {loss}\r')
 
             loss.backward()
             history.append(loss)
@@ -99,7 +99,7 @@ def main(data, model):
         epochs += 1
 
         current_performance = torch.mean(torch.tensor(history[-50:-1]))
-        train = target_loss > current_performance
+        train = target_loss < current_performance
         histories.append(histories)
 
 
