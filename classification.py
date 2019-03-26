@@ -90,7 +90,7 @@ def main(data, model):
             loss = loss_fun(y_pred, y)
 
             if i/batch_size % 10 == 0:
-                print(f'epoch {epochs} {i}:{i+batch_size}/{n_samples} loss {loss}\r')
+                print(f'epoch {epochs} {i}:{i+batch_size}/{n_samples} loss {loss}', end='\r', flush=True)
 
             loss.backward()
             history.append(loss)
@@ -99,6 +99,7 @@ def main(data, model):
         epochs += 1
 
         current_performance = torch.mean(torch.tensor(history[-50:-1]))
+        print(f'\ncurrent performance {current_performance}')
         train = target_loss < current_performance
         histories.append(histories)
 
@@ -107,7 +108,8 @@ def main(data, model):
 
     modelname = '_'.join([network.__class__.__name__, filename, str(hidden_size), str(n_epochs)])
     save_model(network, path=model, modelname=modelname)
-    pass
+    pkl.dump(histories, open(f'{model}_{modelname}_history.pkl', 'wb'))
+
 
 if __name__ == '__main__':
     main()
