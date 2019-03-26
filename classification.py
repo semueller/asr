@@ -75,22 +75,37 @@ def main(data, model):
     target_loss = 1e-2
     train = True
 
-    batch_size = 256
+    batch_size = 0
     epochs = 0
+
     while train:
 
         history = []
+        if batch_size > 0:
+            for i in range(0, n_samples, batch_size):
+                x, y = x_train[i: i+batch_size], y_train[i: i+batch_size]
 
-        for i in range(0, n_samples, batch_size):
-            x, y = x_train[i: i+batch_size], y_train[i: i+batch_size]
+                optim.zero_grad()
 
+                y_pred, _ = network.forward(x)
+                loss = loss_fun(y_pred, y)
+
+                if i/batch_size % 10 == 0:
+                    print(f'epoch {epochs} {i}:{i+batch_size}/{n_samples} loss {loss}', end='\r', flush=True)
+
+                loss.backward()
+                history.append(loss)
+                optim.step()
+            current_performance = torch.mean(torch.tensor(history[-50:-1]))
+            print(f'\ncurrent performance {current_performance}')
+        else:
             optim.zero_grad()
 
-            y_pred, _ = network.forward(x)
-            loss = loss_fun(y_pred, y)
+            y_pred, _ = network.forward(x_train)
+            loss = loss_fun(y_pred, y_train)
 
-            if i/batch_size % 10 == 0:
-                print(f'epoch {epochs} {i}:{i+batch_size}/{n_samples} loss {loss}', end='\r', flush=True)
+            if epochs % 10 == 0:
+                print(f'epoch {epochs} loss {loss}', end='\r', flush=True)
 
             loss.backward()
             history.append(loss)
@@ -98,8 +113,6 @@ def main(data, model):
 
         epochs += 1
 
-        current_performance = torch.mean(torch.tensor(history[-50:-1]))
-        print(f'\ncurrent performance {current_performance}')
         train = target_loss < current_performance
         histories.append(histories)
 
