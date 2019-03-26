@@ -15,44 +15,6 @@ from torch.nn import RNN, GRU, LSTM
 import math
 
 
-class RecEncoder(nn.Module):
-    def __init__(self, input_size, hidden_size, out_dim, num_layers=1):
-        super(RecEncoder, self).__init__()
-        self.gru = GRU(input_size=input_size, hidden_size=hidden_size, batch_first=True)
-        self.fc1 = nn.Linear(in_features=hidden_size, out_features=256)
-        self.fc_out = nn.Linear(in_features=256, out_features=out_dim)
-        self.act_fun = nn.functional.relu
-        self.latent_dim = out_dim
-
-    def forward(self, x):
-        out, h_n = self.gru(x)
-        f1 = nn.functional.leaky_relu(self.fc1(out[:, -1, :]))
-        embedding = nn.functional.leaky_relu(self.fc_out(f1))  # do fully connected layers make sense here? mu and log_var should do this?
-        # embedding = out[-1, :, :]  # output of recurrent unit for last element of sequence
-        return embedding, h_n
-
-
-class RecDecoder(nn.Module):
-    def __init__(self, input_size, hidden_size, out_dim, num_layers=1):
-        super(RecDecoder, self).__init__()
-        self.fc_h0 = nn.Linear(in_features=input_size, out_features=hidden_size)
-        self.gru = GRU(input_size=out_dim, hidden_size=hidden_size, batch_first=True)
-        self.fc_out = nn.Linear(in_features=hidden_size, out_features=out_dim)
-
-    def forward(self, x, seq_len):
-        # t = 0
-        h_t = nn.functional.tanh(self.fc_h0(x))  # compute initial state from embedding
-        x_t = nn.functional.leaky_relu(self.fc_out(h_t), negative_slope=0.04)
-        out = [x_t]
-        for i in range(seq_len-1):
-            _, h_t = self.gru(torch.unsqueeze(x_t, 1), hx=torch.unsqueeze(h_t, 0))
-            h_t = torch.squeeze(h_t, 0)
-            x_t = nn.functional.leaky_relu(self.fc_out(h_t), negative_slope=0.04)
-            out.append(x_t)
-        out = torch.stack(out, dim=1)
-        return out
-
-
 class RbVAE(nn.Module):
     def __init__(self, encoder=None, decoder=None, latent_dim=20, beta=1., activation_function=None,
                  optimizer=optim.Adam, recon_loss=F.mse_loss):
@@ -92,7 +54,7 @@ class RbVAE(nn.Module):
         return mu_, log_var_, h_n
 
     def embed(self, x):
-        mu_, log_var_, h_n = self.encode(x)
+        mu_, log_var_, _ = self.encode(x)
         return mu_ + torch.exp(log_var_ /2)  # a 'sample' without epsilon
 
     def decode(self, z, seq_len):
@@ -190,6 +152,9 @@ class RbVAE(nn.Module):
 if __name__=='__main__':
     import pickle as pkl
 
+    from asr.encoder import GRUEncoder
+    from asr.decoder import GRUDecoder
+
     data = pkl.load(open('/home/bing/sdb/testsets/mfccs_small.pkl', 'rb'))
     # print(data)
     X = torch.tensor(data['X'], dtype=torch.float)
@@ -197,8 +162,8 @@ if __name__=='__main__':
 
     latent_dim = 100
     hidden_size = 100
-    encoder = RecEncoder(input_size=nfeatures, hidden_size=hidden_size, out_dim=int(latent_dim*1.5))
-    decoder = RecDecoder(input_size=latent_dim, hidden_size=hidden_size, out_dim=nfeatures)
+    encoder = GRUEncoder(input_size=nfeatures, hidden_size=hidden_size, out_dim=int(latent_dim * 1.5))
+    decoder = GRUDecoder(input_size=latent_dim, hidden_size=hidden_size, out_dim=nfeatures)
     rbvae = RbVAE(encoder=encoder, decoder=decoder, latent_dim=latent_dim, beta=1.1)
     print('num params: {}'.format(rbvae.num_params))
     rbvae.fit(X, X, batch_size=2, path='./models/', validate=0.0) # don't validate, does duplicate data on gpu, inefficient and throws out of memory exception

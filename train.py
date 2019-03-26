@@ -5,7 +5,7 @@ import pickle as pkl
 import numpy as np
 
 import torch
-from asr.rbvae import RbVAE, RecDecoder, RecEncoder
+from asr.rbvae import RbVAE, GRUDecoder, GRUEncoder
 from asr.util import save_model, load_model
 
 
@@ -45,8 +45,8 @@ def main(data, model):
     latent_dim = 100
     hidden_size = 500
     n_epochs = 1000
-    encoder = RecEncoder(input_size=nfeatures, hidden_size=hidden_size, out_dim=int(latent_dim*1.5))
-    decoder = RecDecoder(input_size=latent_dim, hidden_size=hidden_size, out_dim=nfeatures)
+    encoder = GRUEncoder(input_size=nfeatures, hidden_size=hidden_size, out_dim=int(latent_dim * 1.5))
+    decoder = GRUDecoder(input_size=latent_dim, hidden_size=hidden_size, out_dim=nfeatures)
     rbvae = RbVAE(encoder=encoder, decoder=decoder, latent_dim=latent_dim, beta=1.1)
 
     print('num params: {}'.format(rbvae.num_params))

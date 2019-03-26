@@ -11,8 +11,8 @@ import pickle as pkl
 
 if __name__=='__main__':
     modelpath = '/home/bing/sdb/models'
-    modelname = 'RbVAE_mfccs_100_500_100'
-    datapath = '/home/bing/sdb/testsets/mfccs_50spc.pkl'
+    modelname = 'RbVAE_fbank_26_100_500_2000'
+    datapath = '/home/bing/sdb/testsets/fbank_26_50spc.pkl'
     dataset_name = datapath.split('/')[-1].split('.')[0]
 
 
@@ -53,7 +53,7 @@ if __name__=='__main__':
         dr_embedding[:, 0], dr_embedding[:, 1], c=colors, cmap="Spectral", s=10
     )
     if save:
-        plt.savefig('umap_scatter_{}'.format(dataset_name))
-        pkl.dump(dr_embedding, 'umap_embedding_{}.pkl'.format)
+        plt.savefig(f'umap_scatter_{dataset_name}')
+        pkl.dump(dr_embedding, open(f'umap_embedding_{dataset_name}.pkl', 'wb'))
     if show:
         plt.show()
