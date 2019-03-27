@@ -118,7 +118,7 @@ def main(data, model):
             optim.step()
 
         current_error = test_model(network, x_test, y_test, batch_size)
-        print(f'\ncurrent performance on test set{current_error}')
+        print(f'\ncurrent error rate on test set {current_error}')
 
         n_epochs += 1
 
