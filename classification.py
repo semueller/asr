@@ -78,8 +78,8 @@ def main(data, model):
 
     hidden_size = 500
 #    n_epochs = 1000
-    network = LSTMEncoder(input_size=nfeatures, hidden_size=hidden_size, out_dim=num_classes,
-                         act_out=nn.Sigmoid)
+    network = GRUEncoder(input_size=nfeatures, hidden_size=hidden_size, out_dim=num_classes,
+                         act_out=nn.Sigmoid, num_layers=3)
 
     if device.type == 'cuda':
         x_train = x_train.to(device)
