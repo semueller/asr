@@ -20,6 +20,13 @@ def to_categorical(Y):
     categories = np.array([e[codebook[l]] for l in Y])
     return categories
 
+def error_rate(pred, target):
+    m = torch.argmax(pred, 1)
+    z = torch.zeros(pred.shape)
+    for r, i in zip(z, m):
+        r[i] = 1
+    t = torch.mean(torch.abs(z-target), 1) != 0
+    return torch.mean(t)
 
 @click.command()
 @click.option('--data', type=str, default='./path/to/data.pkl', help='expects path to pickle containing a dict with the word as key')
@@ -40,21 +47,24 @@ def main(data, model):
         print('Allocated:', round(torch.cuda.memory_allocated(0) / 1024 ** 3, 1), 'GB')
         print('Cached:   ', round(torch.cuda.memory_cached(0) / 1024 ** 3, 1), 'GB')
 
-    train_percentage = 0.8
+    train_percentage = 0.95
     x = data['X']
     Y = data['Y']
     Y = to_categorical(Y)
     seqlen, nfeatures = x.shape[1:]
-    idxs_train = [i for i in range(len(x))]
+    idxs = [i for i in range(len(x))]
 
-    # np.random.shuffle(idxs)
-    # split = np.math.ceil(len(idxs)*train_percentage)
-    # idxs_train, idxs_test =  idxs[:split], idxs[split:]
-    # with open(filename+'_idxs.dat', 'w') as f:
-    #     f.write('train: \n {} \n test: \n {} \n'.format(idxs_train, idxs_test))
+    np.random.shuffle(idxs)
+    split = np.math.ceil(len(idxs)*train_percentage)
+    idxs_train, idxs_test =  idxs[:split], idxs[split:]
+    with open(filename+'_idxs.dat', 'w') as f:
+        f.write('train: \n {} \n test: \n {} \n'.format(idxs_train, idxs_test))
 
     x_train = torch.tensor(x[idxs_train], dtype=torch.float)
     y_train = torch.tensor(Y[idxs_train], dtype=torch.float)
+    x_test = torch.tensor(x[idxs_test], dtype=torch.float)
+    y_test = torch.tensor(Y[idxs_test], dtype=torch.float)
+
     n_samples, num_classes = y_train.shape
     del x
 
@@ -67,16 +77,18 @@ def main(data, model):
     if device.type == 'cuda':
         x_train = x_train.to(device)
         y_train = y_train.to(device)
+        y_test = y_test.to(device)
+        x_test = x_test.to(device)
         network = network.to(device)
 
     optim = Adam(network.parameters())
     loss_fun = nn.BCELoss()
     histories = []
-    target_loss = 1e-2
+    target_performance = 1e-2
     train = True
 
     batch_size = 0
-    epochs = 0
+    n_epochs = 0
 
     while train:
 
@@ -91,31 +103,31 @@ def main(data, model):
                 loss = loss_fun(y_pred, y)
 
                 if i/batch_size % 10 == 0:
-                    print(f'epoch {epochs} {i}:{i+batch_size}/{n_samples} loss {loss}', end='\r', flush=True)
+                    print(f'epoch {n_epochs} {i}:{i+batch_size}/{n_samples} loss {loss}', end='\r', flush=True)
 
                 loss.backward()
                 history.append(loss)
                 optim.step()
-            current_performance = torch.mean(torch.tensor(history[-50:-1]))
-            print(f'\ncurrent performance {current_performance}')
+            y_pred_test, _ = network.forward(x_test)
+            current_performance = error_rate(y_pred_test, y_test)
+            print(f'\ncurrent performance on test set{current_performance}')
         else:
             optim.zero_grad()
 
             y_pred, _ = network.forward(x_train)
             loss = loss_fun(y_pred, y_train)
 
-            if epochs % 10 == 0:
-                print(f'epoch {epochs} loss {loss}', end='\r', flush=True)
+            if n_epochs % 10 == 0:
+                print(f'epoch {n_epochs} loss {loss}', end='\r', flush=True)
 
             loss.backward()
             history.append(loss)
             optim.step()
 
-        epochs += 1
+        n_epochs += 1
 
-        train = target_loss < current_performance
+        train = target_performance < current_performance
         histories.append(histories)
-
 
 
 
