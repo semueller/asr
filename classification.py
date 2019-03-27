@@ -77,7 +77,7 @@ def main(data, model):
 
 
     hidden_size = 500
-    n_epochs = 1000
+#    n_epochs = 1000
     network = LSTMEncoder(input_size=nfeatures, hidden_size=hidden_size, out_dim=num_classes,
                          act_out=nn.Sigmoid)
 
@@ -95,7 +95,7 @@ def main(data, model):
     train = True
 
     batch_size = 512
-    n_epochs = 0
+    n_epochs, max_epochs = 0, 200
     print(f'test performances without training: {test_model(network, x_test, y_test, batch_size)}')
 
     while train:
@@ -118,11 +118,11 @@ def main(data, model):
             optim.step()
 
         current_error = test_model(network, x_test, y_test, batch_size)
-        print(f'\ntest error: {current_error}')
+        print(f'\ntest error: {current_error} \n')
 
         n_epochs += 1
 
-        train = target_error < current_error
+        train = target_error < current_error and n_epochs < max_epochs
         histories.append(histories)
 
 
