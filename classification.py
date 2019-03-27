@@ -78,7 +78,7 @@ def main(data, model):
 
     hidden_size = 500
     n_epochs = 1000
-    network = GRUEncoder(input_size=nfeatures, hidden_size=hidden_size, out_dim=num_classes,
+    network = LSTMEncoder(input_size=nfeatures, hidden_size=hidden_size, out_dim=num_classes,
                          act_out=nn.Sigmoid)
 
     if device.type == 'cuda':
@@ -91,7 +91,7 @@ def main(data, model):
     optim = Adam(network.parameters())
     loss_fun = nn.BCELoss()
     histories = []
-    target_error = 1e-2
+    target_error = 5e-2
     train = True
 
     batch_size = 512
@@ -118,7 +118,7 @@ def main(data, model):
             optim.step()
 
         current_error = test_model(network, x_test, y_test, batch_size)
-        print(f'\ncurrent error rate on test set {current_error}')
+        print(f'\ntest error: {current_error}')
 
         n_epochs += 1
 
