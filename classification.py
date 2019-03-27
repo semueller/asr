@@ -21,12 +21,19 @@ def to_categorical(Y):
     return categories
 
 def error_rate(pred, target):
-    m = torch.argmax(pred, 1)
-    z = torch.zeros(pred.shape)
-    for r, i in zip(z, m):
-        r[i] = 1
-    t = torch.mean(torch.abs(z-target), 1) != 0
-    return torch.mean(t)
+    _p = torch.argmax(pred, 1)
+    _t = torch.argmax(target, 1)
+    error = 1-torch.mean((_p == _t).to(torch.float32))
+    return error
+
+def test_model(model, x, y, batch_size=256):
+    with torch.no_grad():
+        errors = []
+        for i in range(0, len(x), batch_size):
+            x_, y_ = x[i:i+batch_size], y[i:i+batch_size]
+            y_p, _ = model.forward(x_)
+            errors.append(error_rate(y_p, y_))
+    return torch.mean(torch.tensor(errors))
 
 @click.command()
 @click.option('--data', type=str, default='./path/to/data.pkl', help='expects path to pickle containing a dict with the word as key')
@@ -64,9 +71,9 @@ def main(data, model):
     y_train = torch.tensor(Y[idxs_train], dtype=torch.float)
     x_test = torch.tensor(x[idxs_test], dtype=torch.float)
     y_test = torch.tensor(Y[idxs_test], dtype=torch.float)
+    del x, Y
 
     n_samples, num_classes = y_train.shape
-    del x
 
 
     hidden_size = 500
@@ -84,49 +91,38 @@ def main(data, model):
     optim = Adam(network.parameters())
     loss_fun = nn.BCELoss()
     histories = []
-    target_performance = 1e-2
+    target_error = 1e-2
     train = True
 
-    batch_size = 0
+    batch_size = 512
     n_epochs = 0
+    print(f'test performances without training: {test_model(network, x_test, y_test, batch_size)}')
 
     while train:
 
         history = []
-        if batch_size > 0:
-            for i in range(0, n_samples, batch_size):
-                x, y = x_train[i: i+batch_size], y_train[i: i+batch_size]
 
-                optim.zero_grad()
+        for i in range(0, n_samples, batch_size):
+            x, y = x_train[i: i+batch_size], y_train[i: i+batch_size]
 
-                y_pred, _ = network.forward(x)
-                loss = loss_fun(y_pred, y)
-
-                if i/batch_size % 10 == 0:
-                    print(f'epoch {n_epochs} {i}:{i+batch_size}/{n_samples} loss {loss}', end='\r', flush=True)
-
-                loss.backward()
-                history.append(loss)
-                optim.step()
-            y_pred_test, _ = network.forward(x_test)
-            current_performance = error_rate(y_pred_test, y_test)
-            print(f'\ncurrent performance on test set{current_performance}')
-        else:
             optim.zero_grad()
 
-            y_pred, _ = network.forward(x_train)
-            loss = loss_fun(y_pred, y_train)
+            y_pred, _ = network.forward(x)
+            loss = loss_fun(y_pred, y)
 
-            if n_epochs % 10 == 0:
-                print(f'epoch {n_epochs} loss {loss}', end='\r', flush=True)
+            if i/batch_size % 10 == 0:
+                print(f'epoch {n_epochs} {i}:{i+batch_size}/{n_samples} loss {loss}', end='\r', flush=True)
 
             loss.backward()
             history.append(loss)
             optim.step()
 
+        current_error = test_model(network, x_test, y_test, batch_size)
+        print(f'\ncurrent performance on test set{current_error}')
+
         n_epochs += 1
 
-        train = target_performance < current_performance
+        train = target_error < current_error
         histories.append(histories)
 
 
