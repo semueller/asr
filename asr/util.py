@@ -18,10 +18,12 @@ def save_model(model, path='./', modelname='model'):
         os.mkdir(path)
     checkpoint = {
         'model': model,
-        'epoch': model.epochs_trained,
         'state_dict': model.state_dict(),
         'optimizer': model.optimizer.state_dict()
     }
+    if hasattr(model, 'epochs_trained'):
+        checkpoint['epoch'] = model.epochs_trained
+
     torch.save(checkpoint, fullpath)
 
 def load_model(path, modelname, inference_only=False, dev='gpu'):
@@ -34,8 +36,12 @@ def load_model(path, modelname, inference_only=False, dev='gpu'):
     model = state['model']
     model.load_state_dict(state['state_dict'])
     print('parameterize optimizer...')
-    model.optimizer.load_state_dict(state['optimizer'])
+    if 'optimizer' in state.keys() and hasattr(model, 'optimizer'):
+        model.optimizer.load_state_dict(state['optimizer'])
     print('loading done')
+    if inference_only:
+        print('Setting model into evaluation mode')
+        model.eval()
     return model
 
 def check_for_gpu():
