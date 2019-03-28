@@ -8,7 +8,7 @@ from torch.nn import RNN, GRU, LSTM
 class GRUEncoder(nn.Module):
     def __init__(self, input_size, hidden_size, out_dim, num_layers=1, act_out=nn.LeakyReLU):
         super(GRUEncoder, self).__init__()
-        self.gru = GRU(input_size=input_size, hidden_size=hidden_size, batch_first=True)
+        self.gru = GRU(input_size=input_size, hidden_size=hidden_size, batch_first=True, num_layers=num_layers)
         self.fc1 = nn.Linear(in_features=hidden_size, out_features=256)
         self.fc_out = nn.Linear(in_features=256, out_features=out_dim)
         self.act_fun = nn.functional.relu
