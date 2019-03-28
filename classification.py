@@ -1,8 +1,9 @@
+import os
 import sys
 import click
 import pickle as pkl
 
-from asr.util import save_model
+from asr.util import save_model, to_categorical, test_classifier
 from asr.encoder import GRUEncoder, LSTMEncoder
 
 import numpy as np
@@ -11,29 +12,6 @@ import torch
 import torch.nn as nn
 from torch.optim import Adam
 
-
-def to_categorical(Y):
-    class_labels = np.unique(Y)
-    num_classes = len(class_labels)
-    e = np.eye(num_classes)
-    codebook = {l: i for i, l in enumerate(class_labels)}
-    categories = np.array([e[codebook[l]] for l in Y])
-    return categories
-
-def error_rate(pred, target):
-    _p = torch.argmax(pred, 1)
-    _t = torch.argmax(target, 1)
-    error = 1-torch.mean((_p == _t).to(torch.float32))
-    return error
-
-def test_model(model, x, y, batch_size=256):
-    with torch.no_grad():
-        errors = []
-        for i in range(0, len(x), batch_size):
-            x_, y_ = x[i:i+batch_size], y[i:i+batch_size]
-            y_p, _ = model.forward(x_)
-            errors.append(error_rate(y_p, y_))
-    return torch.mean(torch.tensor(errors))
 
 @click.command()
 @click.option('--data', type=str, default='./path/to/data.pkl', help='expects path to pickle containing a dict with the word as key')
@@ -96,7 +74,7 @@ def main(data, model):
 
     batch_size = 512
     n_epochs, max_epochs = 0, 200
-    print(f'test performances without training: {test_model(network, x_test, y_test, batch_size)}')
+    print(f'test performances without training: {test_classifier(network.forward, x_test, y_test, batch_size)}')
 
     while train:
 
@@ -117,7 +95,7 @@ def main(data, model):
             history.append(loss)
             optim.step()
 
-        current_error = test_model(network, x_test, y_test, batch_size)
+        current_error = test_classifier(network.forward, x_test, y_test, batch_size)
         print(f'\ntest error: {current_error} \n')
 
         n_epochs += 1
@@ -130,7 +108,10 @@ def main(data, model):
     modelname = '_'.join([network.__class__.__name__, filename, str(hidden_size), str(n_epochs)])
     network.optimizer = optim
     network.epochs_trained = n_epochs
-    save_model(network, path=model, modelname=modelname)
+    try:
+        save_model(network, path=model, modelname=modelname)
+    except:
+        torch.save(model, os.path.join([model, modelname, 'simple_save']))
     pkl.dump(histories, open(f'{model}_{modelname}_history.pkl', 'wb'))
 
 
