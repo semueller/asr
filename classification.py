@@ -128,6 +128,8 @@ def main(data, model):
 
 
     modelname = '_'.join([network.__class__.__name__, filename, str(hidden_size), str(n_epochs)])
+    network.optimizer = optim
+    network.epochs_trained = n_epochs
     save_model(network, path=model, modelname=modelname)
     pkl.dump(histories, open(f'{model}_{modelname}_history.pkl', 'wb'))
 

@@ -19,10 +19,12 @@ def save_model(model, path='./', modelname='model'):
     checkpoint = {
         'model': model,
         'state_dict': model.state_dict(),
-        'optimizer': model.optimizer.state_dict()
     }
     if hasattr(model, 'epochs_trained'):
         checkpoint['epoch'] = model.epochs_trained
+
+    if hasattr(model, 'optimizer'):
+        checkpoint['optimizer'] = model.optimizer.state_dict()
 
     torch.save(checkpoint, fullpath)
 
