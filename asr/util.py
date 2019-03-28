@@ -121,6 +121,29 @@ def get_subset(X, Y, samples_per_class=50, labelranges=None):
             }
 
 
+def to_categorical(Y):
+    class_labels = np.unique(Y)
+    num_classes = len(class_labels)
+    e = np.eye(num_classes)
+    codebook = {l: i for i, l in enumerate(class_labels)}
+    categories = np.array([e[codebook[l]] for l in Y])
+    return categories
+
+def error_rate(pred, target):
+    _p = torch.argmax(pred, 1)
+    _t = torch.argmax(target, 1)
+    error = 1-torch.mean((_p == _t).to(torch.float32))
+    return error
+
+def test_classifier(classify, x, y, batch_size=256):
+    with torch.no_grad():
+        errors = []
+        for i in range(0, len(x), batch_size):
+            x_, y_ = x[i:i+batch_size], y[i:i+batch_size]
+            y_p, _ = classify(x_)
+            errors.append(error_rate(y_p, y_))
+    return torch.mean(torch.tensor(errors))
+
 # if __name__ == '__main__':
     # import pickle as pkl
     # print('test')

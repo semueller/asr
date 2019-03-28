@@ -152,8 +152,8 @@ class RbVAE(nn.Module):
 if __name__=='__main__':
     import pickle as pkl
 
-    from asr.encoder import GRUEncoder
-    from asr.decoder import GRUDecoder
+    from asr.encoder import GRUEncoder, LSTMEncoder
+    from asr.decoder import GRUDecoder, LSTMDecoder
 
     data = pkl.load(open('/home/bing/sdb/testsets/mfccs_small.pkl', 'rb'))
     # print(data)
@@ -162,8 +162,8 @@ if __name__=='__main__':
 
     latent_dim = 100
     hidden_size = 100
-    encoder = GRUEncoder(input_size=nfeatures, hidden_size=hidden_size, out_dim=int(latent_dim * 1.5))
-    decoder = GRUDecoder(input_size=latent_dim, hidden_size=hidden_size, out_dim=nfeatures)
+    encoder = LSTMEncoder(input_size=nfeatures, hidden_size=hidden_size, out_dim=int(latent_dim * 1.5))
+    decoder = LSTMDecoder(input_size=latent_dim, hidden_size=hidden_size, out_dim=nfeatures)
     rbvae = RbVAE(encoder=encoder, decoder=decoder, latent_dim=latent_dim, beta=1.1)
     print('num params: {}'.format(rbvae.num_params))
     rbvae.fit(X, X, batch_size=2, path='./models/', validate=0.0) # don't validate, does duplicate data on gpu, inefficient and throws out of memory exception
