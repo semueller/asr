@@ -76,10 +76,11 @@ def main(data, model):
     n_samples, num_classes = y_train.shape
 
 
-    hidden_size = 500
 #    n_epochs = 1000
+
+    hidden_size = [25, 50, 75, 100, 150, 200, 250, 300, 400]
     network = GRUEncoder(input_size=nfeatures, hidden_size=hidden_size, out_dim=num_classes,
-                         act_out=nn.Sigmoid, num_layers=3)
+                         act_out=nn.Sigmoid, num_layers=1)
 
     if device.type == 'cuda':
         x_train = x_train.to(device)
@@ -91,11 +92,11 @@ def main(data, model):
     optim = Adam(network.parameters())
     loss_fun = nn.BCELoss()
     histories = []
-    target_error = 5e-2
+    target_error = 57e-3
     train = True
 
-    batch_size = 512
-    n_epochs, max_epochs = 0, 200
+    batch_size = 256
+    n_epochs, max_epochs = 0, 100
     print(f'test performances without training: {test_model(network, x_test, y_test, batch_size)}')
 
     while train:
@@ -123,13 +124,14 @@ def main(data, model):
         n_epochs += 1
 
         train = target_error < current_error and n_epochs < max_epochs
-        histories.append(histories)
+        histories.append(history)
 
 
 
-    modelname = '_'.join([network.__class__.__name__, filename, str(hidden_size), str(n_epochs)])
+    modelname = '_'.join([network.__class__.__name__, filename, str(hidden_size), str(n_epochs), str(curent_error)])
     network.optimizer = optim
     network.epochs_trained = n_epochs
+    network.history = histories
     save_model(network, path=model, modelname=modelname)
     pkl.dump(histories, open(f'{model}_{modelname}_history.pkl', 'wb'))
 
