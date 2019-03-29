@@ -30,7 +30,14 @@ def main(modelpath, datapath, dataset_name='mfccs.pkl'):
         model = load_model(modelpath, modelname, inference_only=True)
 
         print('compute encoding')
-        _, h_t = model.forward(x)
+        batch_size = 256
+        hidden_states = []
+        for i in range(0, len(x), batch_size):
+            x_ = x[i:i+batch_size]
+            _, h_t = model.forward(x)
+            hidden_states.append(h_t)
+        h_t = torch.stack(hidden_states, 0)
+
         print('saving')
         result = {}
         result['X'] = h_t
