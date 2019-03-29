@@ -11,6 +11,11 @@ import torch
 # data = np.array([data, data+1, data+2, data+3, data+4])[:, :, np.newaxis]
 
 
+def get_filenames(dir, substr=None):
+    files = [f for f in os.listdir(dir) if os.path.isfile(os.path.join(dir, f))]
+    return files if substr is None else [f for f in files if substr in f]
+
+
 def save_model(model, path='./', modelname='model'):
     fullpath = os.path.join(path, modelname+'_state.tp')
     print('saving model to {}'.format(fullpath))
@@ -27,6 +32,7 @@ def save_model(model, path='./', modelname='model'):
         checkpoint['optimizer'] = model.optimizer.state_dict()
 
     torch.save(checkpoint, fullpath)
+
 
 def load_model(path, modelname, inference_only=False, dev='gpu'):
     if dev == 'gpu' and not torch.cuda.is_available():
@@ -46,6 +52,7 @@ def load_model(path, modelname, inference_only=False, dev='gpu'):
         model.eval()
     return model
 
+
 def check_for_gpu():
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     # Additional Info when using cuda
@@ -55,6 +62,7 @@ def check_for_gpu():
         print('Allocated:', round(torch.cuda.memory_allocated(0) / 1024 ** 3, 1), 'GB')
         print('Cached:   ', round(torch.cuda.memory_cached(0) / 1024 ** 3, 1), 'GB')
     return device
+
 
 def compute_distance_matrix():
     if not os.path.exists('/dev/shm/semueller/asr/npy/data_mfccs.npy'):
@@ -129,11 +137,13 @@ def to_categorical(Y):
     categories = np.array([e[codebook[l]] for l in Y])
     return categories
 
+
 def error_rate(pred, target):
     _p = torch.argmax(pred, 1)
     _t = torch.argmax(target, 1)
     error = 1-torch.mean((_p == _t).to(torch.float32))
     return error
+
 
 def test_classifier(classify, x, y, batch_size=256):
     with torch.no_grad():

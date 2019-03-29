@@ -1,5 +1,5 @@
 import pickle as pkl
-from asr.util import load_model, to_categorical, test_classifier
+from asr.util import load_model, to_categorical, test_classifier, get_filenames
 
 import torch
 import numpy as np
@@ -11,10 +11,6 @@ import pickle as pkl
 
 import os
 
-def get_filenames(dir, substr):
-    return [f for f in os.listdir(dir) if substr in f]
-
-
 if __name__=='__main__':
     modelpath = '/home/bing/sdb/models/classification/models'
     modelnames = get_filenames(modelpath, substr='tensor')
@@ -24,7 +20,6 @@ if __name__=='__main__':
 
     show = True
     save = False
-
     data = pkl.load(open(datapath, 'rb'))
 
     data['X'] = torch.tensor(data['X'], dtype=torch.float)  # jibbles..
@@ -38,6 +33,7 @@ if __name__=='__main__':
 
         print('compute encoding')
         y_pred, h_t = model.forward(data['X'])
+
         print(f'test on {dataset_name}')
         error_rate = test_classifier(model.forward, data['X'], Y_cat)
         print(f'error on {dataset_name}: {error_rate}')
