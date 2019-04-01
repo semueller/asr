@@ -16,12 +16,13 @@ def main(modelpath, datapath, dataset_name='mfccs.pkl'):
 
     X = data['X'].detach().numpy()
     Y = np.argmax(to_categorical(data['Y']), 1)
-
+    hiddim = datapath.split('/')[-1].split('_')[2]
+    print(hiddim)
     gmlvq = GmlvqModel()
     print('train gmlvq')
     gmlvq.fit(X, Y)
     print('done, compute egenvalue decomposition of gmlvq.omega**2')
-    pkl.dump(gmlvq, open(modelpath+'/gmlvq_500.pkl', 'wb'))
+    pkl.dump(gmlvq, open(modelpath+f'/gmlvq{hiddim}.pkl', 'wb'))
     v, u = np.linalg.eig(gmlvq.omega_.conj().T.dot(gmlvq.omega_))
     print(v, u)
     pass
