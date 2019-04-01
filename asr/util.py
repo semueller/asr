@@ -34,7 +34,7 @@ def save_model(model, path='./', modelname='model'):
     torch.save(checkpoint, fullpath)
 
 
-def load_model(path, modelname, inference_only=False, dev='gpu'):
+def load_model(path, modelname, inference_only=False, dev=None):
     if dev == 'gpu' and not torch.cuda.is_available():
         dev = 'cpu'
     fullpath = os.path.join(path, modelname+'_state'+'.tp') if '_state' not in modelname else os.path.join(path, modelname)
