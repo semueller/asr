@@ -157,6 +157,34 @@ def test_classifier(classify, x, y, batch_size=256):
             errors.append(error_rate(y_p, y_))
     return torch.mean(torch.tensor(errors))
 
+
+def gmlvq_covered_variance(gmlvq_model, dims=1, thresh=0, verbose=False):
+    '''
+    :param gmlvq_model:
+    :param dims:
+    :param thresh:
+    :return: if thresh == 0 returns variance explained by number of dims,
+    else return (#dims that explain at least thresh variance, variance explained by them, variance explained by the next dim)
+    '''
+    v, u = np.linalg.eig(gmlvq_model.omega_.conj().T.dot(gmlvq_model.omega_))
+    idx = v.argsort()[::-1]
+    if verbose: print(f'number of eigenvalues {len(v)}')
+    if thresh == 0:
+        return v[idx][:dims].sum() / v.sum() * 100
+    else:
+        if verbose: print(f'searching for number of dimensions that explain at least {thresh}% of variance')
+        tot_var = v.sum()
+        v = v[idx]  # v is now sorted
+        var = v[0]
+        for i in range(1, len(v)):
+            var_old = var/tot_var *100
+            var += v[i]
+            var_perc = var/tot_var * 100
+            if var_perc - var_old < thresh:
+                if verbose: print(f'{i} components explaining {var_old:.2f}% of variance; component {i+1}. explains another {var_perc-var_old:.2f}%')
+                return i, var_old, var_perc-var_old
+
+
 # if __name__ == '__main__':
     # import pickle as pkl
     # print('test')
