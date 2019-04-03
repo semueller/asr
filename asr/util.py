@@ -1,3 +1,4 @@
+import pickle as pkl
 import numpy as np
 import scipy.io.wavfile
 from python_speech_features import mfcc
@@ -6,6 +7,32 @@ from scipy.spatial.distance import cdist
 import os
 import sys
 import torch
+
+def load_dataset_pkl(path):
+    with open(path, 'rb') as f:
+        data = pkl.load(f)
+    return data
+
+class Dataset():
+    def __init__(self, data, labels, labelranges=None, descr=''):
+        self.data = data
+        self.labels = labels
+        self.labelranges = labelranges
+        self.classes = np.unique(self.labels)
+        self.num_classes = len(self.classes)
+        self.descr = descr
+
+    def get_labels_categorical(self):
+        e = np.eye(self.num_classes)
+        codebook = {l: i for i, l in enumerate(self.classes)}
+        categorical = np.array([e[codebook[l]] for l in self.labels])
+        return categorical
+
+    def get_labels_numerical(self):
+        categorical = self.get_labels_categorical()
+        numerical = np.argmax(categorical, 1)
+        return numerical
+
 
 # data = np.random.randint(0, 100, 16000)
 # data = np.array([data, data+1, data+2, data+3, data+4])[:, :, np.newaxis]
@@ -130,15 +157,6 @@ def get_subset(X, Y, samples_per_class=50, labelranges=None):
         'X': sub_x,
         'Y': sub_y
             }
-
-
-def to_categorical(Y):
-    class_labels = np.unique(Y)
-    num_classes = len(class_labels)
-    e = np.eye(num_classes)
-    codebook = {l: i for i, l in enumerate(class_labels)}
-    categories = np.array([e[codebook[l]] for l in Y])
-    return categories
 
 
 def error_rate(pred, target):
