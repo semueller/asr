@@ -16,17 +16,18 @@ import pickle as pkl
 @click.option('--modelpath', type=str, default='./path/to/folder/with/models', help='expects path to pickle containing a dict with the word as key')
 def main(modelpath, datapath, dataset_name='mfccs.pkl'):
     modelnames = get_filenames(modelpath, substr='tensor')
-    models = ['GRUEncoder_mfccs_100_143_tensor(0.0566)_state.tp',  'GRUEncoder_mfccs_300_29_tensor(0.0535)_state.tp',
-'GRUEncoder_mfccs_150_104_tensor(0.0567)_state.tp',  'GRUEncoder_mfccs_400_91_tensor(0.0558)_state.tp',
-'GRUEncoder_mfccs_200_56_tensor(0.0559)_state.tp','GRUEncoder_mfccs_500_28_tensor_state.tp',
-'GRUEncoder_mfccs_250_24_tensor(0.0555)_state.tp',  'GRUEncoder_mfccs_75_200_tensor(0.0623)_state.tp',
-'GRUEncoder_mfccs_25_200_tensor(0.0837)_state.tp']
-    modelnames=[models[5]]
+#    models = ['GRUEncoder_mfccs_100_143_tensor(0.0566)_state.tp',  'GRUEncoder_mfccs_300_29_tensor(0.0535)_state.tp',
+#'GRUEncoder_mfccs_150_104_tensor(0.0567)_state.tp',  'GRUEncoder_mfccs_400_91_tensor(0.0558)_state.tp',
+#'GRUEncoder_mfccs_200_56_tensor(0.0559)_state.tp','GRUEncoder_mfccs_500_28_tensor_state.tp',
+#'GRUEncoder_mfccs_250_24_tensor(0.0555)_state.tp',  'GRUEncoder_mfccs_75_200_tensor(0.0623)_state.tp',
+#'GRUEncoder_mfccs_25_200_tensor(0.0837)_state.tp',
+    models = ['GRUEncoder_mfccs_50_200_tensor(0.0721)_state.tp']
+    modelnames=[models[-1]]
 #    print(modelnames); exit()
     # dataset_name = 'mfccs.pkl'
 
     data = pkl.load(open(datapath+dataset_name, 'rb'))
-    data['X'] = torch.tensor(data['X'][:50000], dtype=torch.float)  # jibbles..
+    data['X'] = torch.tensor(data['X'], dtype=torch.float)  # jibbles..
     device = check_for_gpu()
     if device.type == 'cuda':
         data['X'] = data['X'].to(device)
@@ -34,7 +35,7 @@ def main(modelpath, datapath, dataset_name='mfccs.pkl'):
 
     for modelname in modelnames:
 
-        model = load_model(modelpath, modelname, inference_only=True)
+        model = load_model(modelpath, modelname, inference_only=True, dev='cpu')
 #        model.to('cpu')
         print('compute encoding')
         batch_size = 256
@@ -54,7 +55,7 @@ def main(modelpath, datapath, dataset_name='mfccs.pkl'):
         result['X'] = hidden_states
         result['Y'] = data['Y']
         result['labelranges'] = data['labelranges']
-        pkl.dump(result, open(f'{datapath}/embedded/{modelname}_embedding.pkl_1', 'wb'))
+        pkl.dump(result, open(f'{datapath}/embedded/{modelname}_embedding.pkl', 'wb'))
         del result
 
 
