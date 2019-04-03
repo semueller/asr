@@ -82,18 +82,16 @@ def main(datapath, modelpath):
 
             for i in range(0, n_samples, batch_size):
                 x, y = x_train[i: i+batch_size], y_train[i: i+batch_size]
-
                 optim.zero_grad()
-
                 y_pred, _ = network.forward(x)
                 loss = loss_fun(y_pred, y)
-
-                if i/batch_size % 10 == 0:
-                    print(f'epoch {n_epochs} {i}:{i+batch_size}/{n_samples} loss {loss}', end='\r', flush=True)
-
                 loss.backward()
                 history.append(loss)
                 optim.step()
+                if i/batch_size % 10 == 0:
+                    print(f'epoch {n_epochs} {i}:{i+batch_size}/{n_samples} loss {loss}', end='\r', flush=True)
+
+
 
             current_error = test_classifier(network.forward, x_test, y_test, batch_size)
             print(f'\ntest error: {current_error} \n')
@@ -107,7 +105,7 @@ def main(datapath, modelpath):
         network.optimizer = optim
         network.history = histories
         network.epochs_trained = n_epochs
-        save_model(network, path=model, modelname=modelname)
+        save_model(network, path=modelpath, modelname=modelname)
 
 
 if __name__ == '__main__':
