@@ -24,16 +24,15 @@ class Dataset():
         self.num_classes = len(self.classes)
         self.descr = descr
         self.num_samples = len(self.data)
+        self.codebook = {l: i for i, l in enumerate(self.classes)}
 
     def get_labels_categorical(self):
         e = np.eye(self.num_classes)
-        codebook = {l: i for i, l in enumerate(self.classes)}
-        categorical = np.array([e[codebook[l]] for l in self.labels])
+        categorical = np.array([e[self.codebook[l]] for l in self.labels])
         return categorical
 
     def get_labels_numerical(self):
-        categorical = self.get_labels_categorical()
-        numerical = np.argmax(categorical, 1)
+        numerical = np.array([self.codebook[l] for l in self.labels])
         return numerical
 
 
