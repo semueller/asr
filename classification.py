@@ -25,8 +25,8 @@ def main(datapath, modelpath):
     datadir = os.path.join(*datadir)
     dataset = load_pkl(datapath)  # Dataset from asr.util
     print('looking for idx files')
-    idxs_train = load_pkl(os.path.join('/', datadir, 'idxs_train.pkl'))
-    idxs_test = load_pkl(os.path.join('/', datadir, 'idxs_test.pkl'))
+#    idxs_train = load_pkl(os.path.join('/', datadir, 'idxs_train.pkl'))
+#    idxs_test = load_pkl(os.path.join('/', datadir, 'idxs_test.pkl'))
 
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -41,6 +41,15 @@ def main(datapath, modelpath):
     Y = dataset.get_labels_categorical()
     seqlen, nfeatures = x.shape[1:]
     print('splitting up data into train and test sets')
+
+    idxs = [x for x in range(len(x))]
+    np.random.shuffle(idxs)
+    split = int(0.95*len(idxs))
+    idxs_train = idxs[:split]
+    idxs_test = idxs[split:]
+    with open('/'+datadir+'idxs.pkl', 'wb') as f:
+        pkl.dump({'train':idxs_train, 'test':idxs_test},f)
+#    print(idxs_test); exit()
     x_train = torch.tensor(x[idxs_train], dtype=torch.float)
     y_train = torch.tensor(Y[idxs_train], dtype=torch.float)
     x_test = torch.tensor(x[idxs_test], dtype=torch.float)
@@ -68,7 +77,7 @@ def main(datapath, modelpath):
             network = network.to(device)
 
         optim = Adam(network.parameters(), )#lr=0.005) # default 0.001
-        loss_fun = nn.MSELoss()#nn.BCELoss()
+        loss_fun = nn.BCELoss()
         histories = []
         target_error = 57e-3
         train = True
