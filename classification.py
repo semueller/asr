@@ -15,14 +15,18 @@ from asr.encoder import GRUEncoder, LSTMEncoder
 @click.command()
 @click.option('--datapath', type=str, default='./path/to/data.pkl', help='expects path to pickle containing a dict with the word as key')
 @click.option('--modelpath', type=str, default='./save/model/to/', help='expects path to pickle containing a dict with the word as key')
-def main(data, model):
+def main(datapath, modelpath):
 
-    print('loading data from {}'.format(data))
-    filename = data.split('/')[-1].split('.')[0]
-    datapath = os.path.join(data.split('/')[:-1])
-    dataset = load_pkl(data)  # Dataset from asr.util
-    idxs_train = load_pkl(os.path.join([datapath, 'idxs_train.pkl']))
-    idxs_test = load_pkl(os.path.join([datapath, 'idxs_test.pkl']))
+    print(f'loading data from {datapath}')
+    filename = datapath.split('/')[-1].split('.')[0]
+#    print(datapath.split('/')[:-1])
+#    exit()
+    datadir = datapath.split('/')[:-1]
+    datadir = os.path.join(*datadir)
+    dataset = load_pkl(datapath)  # Dataset from asr.util
+    print('looking for idx files')
+    idxs_train = load_pkl(os.path.join('/', datadir, 'idxs_train.pkl'))
+    idxs_test = load_pkl(os.path.join('/', datadir, 'idxs_test.pkl'))
 
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -36,7 +40,7 @@ def main(data, model):
     x = dataset.data
     Y = dataset.get_labels_categorical()
     seqlen, nfeatures = x.shape[1:]
-
+    print('splitting up data into train and test sets')
     x_train = torch.tensor(x[idxs_train], dtype=torch.float)
     y_train = torch.tensor(Y[idxs_train], dtype=torch.float)
     x_test = torch.tensor(x[idxs_test], dtype=torch.float)
@@ -52,9 +56,11 @@ def main(data, model):
 
 
     # hidden_size = [25, 50, 75, 100, 150, 200, 250, 300, 400]
-    hidden_size = [25, 50, 250, 500]
+    hidden_size = [500, 250, 50, 25]
+    print(f'starting training of classifiers with hidden dims of {hidden_size}')
 
     for hid_s in hidden_size:
+        print(f'training model with {hid_s} hidden dims')
         network = GRUEncoder(input_size=nfeatures, hidden_size=hid_s, out_dim=num_classes,
                              act_out=nn.Sigmoid, num_layers=1)
 
