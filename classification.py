@@ -45,7 +45,7 @@ def main(datapath, modelpath):
     y_train = torch.tensor(Y[idxs_train], dtype=torch.float)
     x_test = torch.tensor(x[idxs_test], dtype=torch.float)
     y_test = torch.tensor(Y[idxs_test], dtype=torch.float)
-    del x, Y
+    del x, Y, dataset
 
     n_samples, num_classes = y_train.shape
 
@@ -56,19 +56,19 @@ def main(datapath, modelpath):
 
 
     # hidden_size = [25, 50, 75, 100, 150, 200, 250, 300, 400]
-    hidden_size = [500, 250, 50, 25]
+    hidden_size = [500, 25, 250, 50]
     print(f'starting training of classifiers with hidden dims of {hidden_size}')
 
     for hid_s in hidden_size:
         print(f'training model with {hid_s} hidden dims')
-        network = GRUEncoder(input_size=nfeatures, hidden_size=hid_s, out_dim=num_classes,
+        network = LSTMEncoder(input_size=nfeatures, hidden_size=hid_s, out_dim=num_classes,
                              act_out=nn.Sigmoid, num_layers=1)
 
         if device.type == 'cuda':
             network = network.to(device)
 
-        optim = Adam(network.parameters())
-        loss_fun = nn.BCELoss()
+        optim = Adam(network.parameters(), )#lr=0.005) # default 0.001
+        loss_fun = nn.MSELoss()#nn.BCELoss()
         histories = []
         target_error = 57e-3
         train = True
@@ -84,6 +84,7 @@ def main(datapath, modelpath):
                 x, y = x_train[i: i+batch_size], y_train[i: i+batch_size]
                 optim.zero_grad()
                 y_pred, _ = network.forward(x)
+#                print(y_pred); exit();
                 loss = loss_fun(y_pred, y)
                 loss.backward()
                 history.append(loss)
@@ -92,8 +93,9 @@ def main(datapath, modelpath):
                     print(f'epoch {n_epochs} {i}:{i+batch_size}/{n_samples} loss {loss}', end='\r', flush=True)
 
 
-
-            current_error = test_classifier(network.forward, x_test, y_test, batch_size)
+#            train_error = test_classifier(network.forward, x_train, y_train, 512)
+#            print(f'\ntrain error: {train_error}')
+            current_error = test_classifier(network.forward, x_test, y_test, 512)
             print(f'\ntest error: {current_error} \n')
 
             n_epochs += 1

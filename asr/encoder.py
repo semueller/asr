@@ -11,13 +11,13 @@ class GRUEncoder(nn.Module):
         self.gru = GRU(input_size=input_size, hidden_size=hidden_size, batch_first=True, num_layers=num_layers)
         self.fc1 = nn.Linear(in_features=hidden_size, out_features=256)
         self.fc_out = nn.Linear(in_features=256, out_features=out_dim)
-        self.act_fun = nn.functional.relu
+        self.act_fun = nn.LeakyReLU()
         self.latent_dim = out_dim
         self.act_out = act_out()
 
     def forward(self, x):
         out, h_n = self.gru(x)
-        f1 = nn.functional.leaky_relu(self.fc1(out[:, -1, :]))
+        f1 = self.act_fun(self.fc1(out[:, -1, :]))
         embedding = self.act_out(self.fc_out(f1))  # do fully connected layers make sense here? mu and log_var should do this?
         # embedding = out[-1, :, :]  # output of recurrent unit for last element of sequence
         return embedding, h_n
