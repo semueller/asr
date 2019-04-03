@@ -8,10 +8,12 @@ import os
 import sys
 import torch
 
-def load_dataset_pkl(path):
+
+def load_pkl(path):
     with open(path, 'rb') as f:
         data = pkl.load(f)
     return data
+
 
 class Dataset():
     def __init__(self, data, labels, labelranges=None, descr=''):
@@ -21,6 +23,7 @@ class Dataset():
         self.classes = np.unique(self.labels)
         self.num_classes = len(self.classes)
         self.descr = descr
+        self.num_samples = len(self.data)
 
     def get_labels_categorical(self):
         e = np.eye(self.num_classes)
@@ -32,10 +35,6 @@ class Dataset():
         categorical = self.get_labels_categorical()
         numerical = np.argmax(categorical, 1)
         return numerical
-
-
-# data = np.random.randint(0, 100, 16000)
-# data = np.array([data, data+1, data+2, data+3, data+4])[:, :, np.newaxis]
 
 
 def get_filenames(dir, substr=None):
