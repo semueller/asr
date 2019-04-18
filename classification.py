@@ -44,10 +44,11 @@ def main(datapath, modelpath):
 
     idxs = [x for x in range(len(x))]
     np.random.shuffle(idxs)
-    split = int(0.95*len(idxs))
+    split_percent = 0.90
+    split = int(split_percent*len(idxs))
     idxs_train = idxs[:split]
     idxs_test = idxs[split:]
-    with open('/'+datadir+'idxs.pkl', 'wb') as f:
+    with open('/'+datadir+'/idxs.pkl', 'wb') as f:
         pkl.dump({'train':idxs_train, 'test':idxs_test},f)
 #    print(idxs_test); exit()
     x_train = torch.tensor(x[idxs_train], dtype=torch.float)
@@ -70,7 +71,7 @@ def main(datapath, modelpath):
 
     for hid_s in hidden_size:
         print(f'training model with {hid_s} hidden dims')
-        network = LSTMEncoder(input_size=nfeatures, hidden_size=hid_s, out_dim=num_classes,
+        network = GRUEncoder(input_size=nfeatures, hidden_size=hid_s, out_dim=num_classes,
                              act_out=nn.Sigmoid, num_layers=1)
 
         if device.type == 'cuda':
