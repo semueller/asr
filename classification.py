@@ -1,5 +1,7 @@
 import os
 import sys
+from typing import Optional, List, Any
+
 import click
 import pickle as pkl
 
@@ -80,6 +82,7 @@ def main(datapath, modelpath):
         optim = Adam(network.parameters(), )#lr=0.005) # default 0.001
         loss_fun = nn.BCELoss()
         histories = []
+        test_errors = []
         target_error = 57e-3
         train = True
 
@@ -107,15 +110,16 @@ def main(datapath, modelpath):
 #            print(f'\ntrain error: {train_error}')
             current_error = test_classifier(network.forward, x_test, y_test, 512)
             print(f'\ntest error: {current_error} \n')
+            test_errors.append(current_error)
 
             n_epochs += 1
-
             train = target_error < current_error and n_epochs < max_epochs
             histories.append(history)
 
         modelname = '_'.join([network.__class__.__name__, filename, str(hid_s), str(n_epochs), str(current_error)])
         network.optimizer = optim
         network.history = histories
+        network.test_errors = test_errors
         network.epochs_trained = n_epochs
         save_model(network, path=modelpath, modelname=modelname)
 
