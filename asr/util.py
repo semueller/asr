@@ -35,6 +35,23 @@ class Dataset():
         numerical = np.array([self.codebook[l] for l in self.labels])
         return numerical
 
+    def filter_by_class(self, classes):
+        '''
+        :param classes: what classes to return
+        :return: idxs of data/ labels in classes
+        '''
+        if type(classes) != list:
+            classes = list(classes)
+        c = [self.codebook[l] for l in classes]  # get number of class
+        y = self.get_labels_numerical()
+        idxs = []
+        for i, v in enumerate(y):
+            if v in c:
+                idxs.append(i)
+        return idxs
+
+    def _copy(self):
+        return Dataset(self.data, self.labels, self.labelranges, self.descr)
 
 def get_filenames(dir, substr=None):
     files = [f for f in os.listdir(dir) if os.path.isfile(os.path.join(dir, f))]
