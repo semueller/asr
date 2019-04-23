@@ -81,7 +81,7 @@ def load_model(path, modelname, inference_only=False, dev=None):
         dev = 'cpu'
     fullpath = os.path.join(path, modelname+'_state'+'.tp') if '_state' not in modelname else os.path.join(path, modelname)
     print('loading checkpoint from {}'.format(fullpath))
-    state = torch.load(fullpath)#, map_location=dev)
+    state = torch.load(fullpath, map_location=dev)
     print('loading model...')
     model = state['model']
     model.load_state_dict(state['state_dict'])

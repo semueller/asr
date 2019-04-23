@@ -1,5 +1,5 @@
 import pickle as pkl
-from asr.util import load_model, to_categorical, test_classifier, get_filenames
+from asr.util import load_model, Dataset, test_classifier, get_filenames
 
 import torch
 import numpy as np
@@ -12,30 +12,30 @@ import pickle as pkl
 import os
 
 if __name__=='__main__':
-    modelpath = '/home/bing/sdb/models/classification/models'
+    modelpath = '/home/bing/sdb/models/classification/mfccs'
     modelnames = get_filenames(modelpath, substr='tensor')
     datapath = '/home/bing/sdb/testsets/mfccs_50spc.pkl'
-    dataset_name = datapath.split('/')[-1].split('.')[0]
+    dataset_name = 'mfccs_50spc'
 
 
-    show = True
-    save = False
-    data = pkl.load(open(datapath, 'rb'))
+    show = False
+    save = True
+    data: Dataset = pkl.load(open(datapath, 'rb'))
 
-    data['X'] = torch.tensor(data['X'], dtype=torch.float)  # jibbles..
-    Y_cat = torch.tensor(to_categorical(data['Y']), dtype=torch.float32)
+    data.data = torch.tensor(data.data, dtype=torch.float)  # jibbles..
+    Y_cat = torch.tensor(data.get_labels_categorical(), dtype=torch.float32)
 
     for modelname in modelnames:
         # if not '_500_' in modelname:
         #     continue
         print(f'\n\n\nevaluating {modelname}')
-        model = load_model(modelpath, modelname)
+        model = load_model(modelpath, modelname, dev='cpu')
 
         print('compute encoding')
-        y_pred, h_t = model.forward(data['X'])
+        y_pred, h_t = model.forward(data.data)
 
         print(f'test on {dataset_name}')
-        error_rate = test_classifier(model.forward, data['X'], Y_cat)
+        error_rate = test_classifier(model.forward, data.data, Y_cat)
         print(f'error on {dataset_name}: {error_rate}')
         y_c = torch.argmax(y_pred, 1)
         h_t = h_t.squeeze(0)
@@ -52,8 +52,8 @@ if __name__=='__main__':
         plt.title(f'error on set: {error_rate*100:.2f}%')
         plt.colorbar()
 
-        classes = np.unique(data['Y'])
-        num_classes = len(classes)
+        classes = data.classes
+        num_classes = data.num_classes
         spc = 50
         for i in range(num_classes):
             plt.annotate(classes[i], [-90, i*50+25])
@@ -67,7 +67,7 @@ if __name__=='__main__':
         dr_embedding = um.fit_transform(embedding)
 
         codebook = {c: n for c, n in zip(classes, range(num_classes))}
-        coded = [codebook[i] for i in data['Y']]
+        coded =  [data.codebook[i] for i in data.labels]
         cmap = plt.get_cmap('nipy_spectral')
         colors = [cmap(1.*i/num_classes) for i in range(num_classes)]
         colors = [colors[i] for i in coded]

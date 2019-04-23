@@ -26,9 +26,9 @@ def main(datapath, modelpath, idxs):
     idxs_test = idxs['test']
 
     for dataset_name in dataset_names:
-        dataset: Dataset = load_pkl(dataset_name)
+        dataset: Dataset = load_pkl(datapath+dataset_name)
         X = dataset.data.detach().numpy()
-        Y = dataset.labels.get_labels_numerical()
+        Y = dataset.get_labels_numerical()
         x_train, x_test = X[idxs_train], X[idxs_test]
         y_train, y_test = Y[idxs_train], Y[idxs_test]
         hiddim = dataset_name.split('/')[-1].split('_')[2]
