@@ -14,9 +14,10 @@ import pickle as pkl
 @click.command()
 @click.option('--datapath', type=str, default='./path/to/data.pkl', help='expects path to pickle containing a dict with the word as key')
 @click.option('--modelpath', type=str, default='./path/to/folder/with/models', help='expects path to pickle containing a dict with the word as key')
-def main(modelpath, datapath, dataset_name='mfccs.pkl'):
-    modelnames = get_filenames(modelpath, substr='tensor')
-
+@click.option('--dataset_name', type=str, default='mfccs.pkl')
+def main(modelpath, datapath, dataset_name):
+#    modelnames = get_filenames(modelpath, substr='tensor')
+    modelnames = ['GRUEncoder_mfccs_1_500_20_tensor(0.0563)_state.tp']
 #    models = ['GRUEncoder_mfccs_100_143_tensor(0.0566)_state.tp',  'GRUEncoder_mfccs_300_29_tensor(0.0535)_state.tp',
 #'GRUEncoder_mfccs_150_104_tensor(0.0567)_state.tp',  'GRUEncoder_mfccs_400_91_tensor(0.0558)_state.tp',
 #'GRUEncoder_mfccs_200_56_tensor(0.0559)_state.tp','GRUEncoder_mfccs_500_28_tensor_state.tp',
@@ -28,7 +29,7 @@ def main(modelpath, datapath, dataset_name='mfccs.pkl'):
     # dataset_name = 'mfccs.pkl'
 
     data = load_pkl(datapath+dataset_name)
-    data.data = torch.tensor(data.data, dtype=torch.float)  # jibbles..
+    data.data = torch.tensor(data.data[50000:], dtype=torch.float)  # jibbles..
     device = check_for_gpu()
     if device.type == 'cuda':
         data.data = data.data.to(device)
@@ -53,7 +54,7 @@ def main(modelpath, datapath, dataset_name='mfccs.pkl'):
 #        exit()
         print('saving')
         result = Dataset(data=hidden_states, labels=data.labels, labelranges=data.labelranges)
-        pkl.dump(result, open(f'{datapath}/embedded/{modelname}_embedding.pkl', 'wb'))
+        pkl.dump(result, open(f'{datapath}/embedded/{modelname}_embedding.pkl_2', 'wb'))
         del result
 
 

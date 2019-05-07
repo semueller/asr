@@ -50,7 +50,9 @@ def main(datapath, modelpath):
     split = int(split_percent*len(idxs))
     idxs_train = idxs[:split]
     idxs_test = idxs[split:]
-    with open('/'+datadir+'/idxs.pkl', 'wb') as f:
+    idx_path = '/'+datadir+f'/idxs_{filename}.pkl'
+    print(f'saving idxs to {idx_path}')
+    with open(idx_path, 'wb') as f:
         pkl.dump({'train':idxs_train, 'test':idxs_test},f)
 #    print(idxs_test); exit()
     x_train = torch.tensor(x[idxs_train], dtype=torch.float)
