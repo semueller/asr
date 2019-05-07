@@ -7,6 +7,7 @@ from scipy.spatial.distance import cdist
 import os
 import sys
 import torch
+from sklearn_lvq import GmlvqModel
 
 
 def load_pkl(path):
@@ -79,7 +80,8 @@ def save_model(model, path='./', modelname='model'):
 def load_model(path, modelname, inference_only=False, dev=None):
     if dev == 'gpu' and not torch.cuda.is_available():
         dev = 'cpu'
-    fullpath = os.path.join(path, modelname+'_state'+'.tp') if '_state' not in modelname else os.path.join(path, modelname)
+
+    fullpath = (os.path.join(path, modelname+'_state'+'.tp') if '_state' not in modelname else os.path.join(path, modelname)) if path is not None else modelname
     print('loading checkpoint from {}'.format(fullpath))
     state = torch.load(fullpath, map_location=dev)
     print('loading model...')
@@ -191,7 +193,7 @@ def test_classifier(classify, x, y, batch_size=256):
     return torch.mean(torch.tensor(errors))
 
 
-def gmlvq_covered_variance(gmlvq_model, dims=1, thresh=0, verbose=False):
+def gmlvq_covered_variance(gmlvq_model: GmlvqModel, dims=1, thresh=0, verbose=False):
     '''
     :param gmlvq_model:
     :param dims:
@@ -215,7 +217,7 @@ def gmlvq_covered_variance(gmlvq_model, dims=1, thresh=0, verbose=False):
             var_perc = var/tot_var * 100
             if var_perc - var_old < thresh:
                 if verbose: print(f'{i} components explaining {var_old:.2f}% of variance; component {i+1}. explains another {var_perc-var_old:.2f}%')
-                return i, var_old, var_perc-var_old
+                return i, var_old, var_perc-var_old, v[:20]
 
 
 # if __name__ == '__main__':
