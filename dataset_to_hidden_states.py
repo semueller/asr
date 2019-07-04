@@ -16,8 +16,8 @@ import pickle as pkl
 @click.option('--modelpath', type=str, default='./path/to/folder/with/models', help='expects path to pickle containing a dict with the word as key')
 @click.option('--dataset_name', type=str, default='mfccs.pkl')
 def main(modelpath, datapath, dataset_name):
-#    modelnames = get_filenames(modelpath, substr='tensor')
-    modelnames = ['GRUEncoder_mfccs_1_500_20_tensor(0.0563)_state.tp']
+    modelnames = get_filenames(modelpath, substr='tensor')
+    # modelnames = ['GRUEncoder_mfccs_1_500_20_tensor(0.0563)_state.tp']
 #    models = ['GRUEncoder_mfccs_100_143_tensor(0.0566)_state.tp',  'GRUEncoder_mfccs_300_29_tensor(0.0535)_state.tp',
 #'GRUEncoder_mfccs_150_104_tensor(0.0567)_state.tp',  'GRUEncoder_mfccs_400_91_tensor(0.0558)_state.tp',
 #'GRUEncoder_mfccs_200_56_tensor(0.0559)_state.tp','GRUEncoder_mfccs_500_28_tensor_state.tp',
@@ -26,10 +26,10 @@ def main(modelpath, datapath, dataset_name):
 #    models = ['GRUEncoder_mfccs_50_200_tensor(0.0721)_state.tp']
 #    modelnames=[models[-1]]
 #    print(modelnames); exit()
-    # dataset_name = 'mfccs.pkl'
+# dataset_name = 'mfccs.pkl'
 
     data = load_pkl(datapath+dataset_name)
-    data.data = torch.tensor(data.data[50000:], dtype=torch.float)  # jibbles..
+    data.data = torch.tensor(data.data, dtype=torch.float)  # jibbles..
     device = check_for_gpu()
     if device.type == 'cuda':
         data.data = data.data.to(device)

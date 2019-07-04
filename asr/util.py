@@ -19,13 +19,29 @@ def load_pkl(path):
 class Dataset():
     def __init__(self, data, labels, labelranges=None, descr=''):
         self.data = data
-        self.labels = labels
+        self.labels = np.array(labels)
         self.labelranges = labelranges
         self.classes = np.unique(self.labels)
         self.num_classes = len(self.classes)
         self.descr = descr
         self.num_samples = len(self.data)
         self.codebook = {l: i for i, l in enumerate(self.classes)}
+
+
+    def get_n_samples_per_class(self, n=50):
+        sub_x, sub_y = [], []
+
+        for c, start, end in self.labelranges:
+            idxs = np.random.randint(start, end, n)
+            sub_x.append(self.data[idxs])
+            sub_y.append(self.labels[idxs])
+        sub_x = np.concatenate(tuple(sub_x), 0)
+        sub_y = np.concatenate(tuple(sub_y), 0)
+        return {
+            'X': sub_x,
+            'Y': sub_y
+        }
+
 
     def get_labels_categorical(self):
         e = np.eye(self.num_classes)
@@ -113,6 +129,7 @@ def check_for_gpu():
 
 def compute_distance_matrix():
     if not os.path.exists('/dev/shm/semueller/asr/npy/data_mfccs.npy'):
+        print('computing mfcc features')
         SAMPLING_RATE = 16000  # from README.md
         data_mfccs = []
         pth = '/dev/shm/semueller/asr/npy/train_data.npy'
@@ -151,29 +168,6 @@ def compute_distance_matrix():
 
 def to_ranges(Y):
     raise NotImplementedError()
-
-
-def get_subset(X, Y, samples_per_class=50, labelranges=None):
-    if labelranges is None:
-        labelranges = to_ranges(Y)
-
-    if type(Y) != np.ndarray:
-        Y = np.array(Y)
-
-    sub_x, sub_y = [], []
-
-    for c, start, end in labelranges:
-        idxs = np.random.randint(start, end, samples_per_class)
-        sub_x.append(X[idxs])
-        sub_y.append(Y[idxs])
-
-    sub_x = np.concatenate(tuple(sub_x), 0)
-    sub_y = np.concatenate(tuple(sub_y), 0)
-
-    return {
-        'X': sub_x,
-        'Y': sub_y
-            }
 
 
 def error_rate(pred, target):

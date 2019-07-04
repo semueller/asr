@@ -12,8 +12,19 @@ setup(name='asr',
       packages=['asr'],
       url='http://github.com/semueller',
       license='GPL3',
-      install_requires=['torch>=1.0.1',
-			'scipy>=1.1.0',
-			'python-speech-features>=0.6'],
+      install_requires=[
+		'torch>=1.0.1',
+		'scipy>=1.1.0',
+		'python-speech-features>=0.6',
+		'umap',
+		'sklearn',
+		'matplotlib',
+		'click',
+		'sklearn-lvq'
+	],
+
+    dependency_links=[
+	'git+https://github.com/MrNuggelz/sklearn-lvq.git'
+	]
 )
 

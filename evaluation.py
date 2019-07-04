@@ -65,26 +65,26 @@ def eval_classifier(data, modelnames, destination, verbose):
             plt.savefig(f'{destination}/{name}_eval_dist.pdf')
             del f
 
-        # print('calc dimensionality reduction with umap')
-        # um = UMAP()
-        # dr_embedding = um.fit_transform(embedding)
-        #
-        # codebook = {c: n for c, n in zip(classes, range(num_classes))}
-        # coded =  [data.codebook[i] for i in data.labels]
-        # cmap = plt.get_cmap('nipy_spectral')
-        # colors = [cmap(1.*i/num_classes) for i in range(num_classes)]
-        # colors = [colors[i] for i in coded]
-        # # plt.subplot(2, 1, 2)
-        # f2 = plt.figure()
-        # for i in range(num_classes):
-        #     plt.scatter(
-        #         dr_embedding[i*50:i*50+50, 0], dr_embedding[i*50:i*50+50, 1], c=colors[i*50:i*50+50], cmap="nipy_spectral", s=10,
-        #         label=classes[i]
-        #     )
-        # plt.legend()
-        # if save:
-        #     plt.savefig(f'plots/{modelname}_eval_umap.pdf')
-        #     del f2
+        print('calc dimensionality reduction with umap')
+        um = UMAP()
+        dr_embedding = um.fit_transform(embedding)
+
+        codebook = {c: n for c, n in zip(classes, range(num_classes))}
+        coded =  [data.codebook[i] for i in data.labels]
+        cmap = plt.get_cmap('nipy_spectral')
+        colors = [cmap(1.*i/num_classes) for i in range(num_classes)]
+        colors = [colors[i] for i in coded]
+        # plt.subplot(2, 1, 2)
+        f2 = plt.figure()
+        for i in range(num_classes):
+            plt.scatter(
+                dr_embedding[i*50:i*50+50, 0], dr_embedding[i*50:i*50+50, 1], c=colors[i*50:i*50+50], cmap="nipy_spectral", s=10,
+                label=classes[i]
+            )
+        plt.legend()
+        if save:
+            plt.savefig(f'plots/{modelname}_eval_umap.pdf')
+            del f2
     del data
     if show:
         plt.show()

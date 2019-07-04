@@ -70,7 +70,7 @@ def main(datapath, modelpath):
 
 
     # hidden_size = [25, 50, 75, 100, 150, 200, 250, 300, 400]
-    hidden_size = [500, 25, 250, 50]
+    hidden_size = [25, 250, 50]
     print(f'starting training of classifiers with hidden dims of {hidden_size}')
 
     for hid_s in hidden_size:

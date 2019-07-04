@@ -4,13 +4,16 @@ import os
 import sys
 
 import pickle as pkl
+from asr.util import Dataset
 
-def merge_set(argv = None):
-    if len(argv) > 1:
-        path = argv[1].split('/')
-    else:
-        path = './data/tf'.split('/')
+from python_speech_features import mfcc, fbank, logfbank
+
+def merge_set(path):
     prefix = '/'.join(path[:-1])
+    target_dir = '/npy'
+    if not os.path.exists(prefix+target_dir):
+        os.mkdir(prefix+target_dir)
+
     dataset = path[-1]
     # words = ['one',
     #          'two',
@@ -49,6 +52,8 @@ def merge_set(argv = None):
 
         n = 0
         for f in files[word][offset:]:
+            if len(d_x) > 5:
+                break
             w = list(wav.read(f)[1])
             if len(w) != target_l:  # ones.shape[1]:
                 n += 1
@@ -61,8 +66,9 @@ def merge_set(argv = None):
             d_y = np.concatenate((d_y, w_y), axis=0)
 
 
-        np.save(prefix+'/npy/'+word, d_x)
-        np.save(prefix+'/npy/label_'+word, d_y)
+
+        np.save(prefix+target_dir+'/'+word, d_x)
+        np.save(prefix+target_dir+'/label_'+word, d_y)
         # np.save('./npy/l_'+str(target_l)+word+'pad1_y', ones_l)
         print('n {}'.format(n))
         print(d_x.shape)
@@ -92,7 +98,7 @@ def build_subset(path_npy = None, label_idxs = None, samples_per_class = 100, ou
     np.save('/dev/shm/semueller/asr/npy/'+output_filename, res)
 
 
-def mfcc_to_datalabel(pth):
+def mfcc_to_dataset(mfcc):
     dic = pkl.load(open(pth, 'rb'))
     data = None
     labels = []
@@ -111,7 +117,7 @@ def mfcc_to_datalabel(pth):
 def normalize(x):
     # normalizes such that each filter (ie each dim per feature vector) is normal distributed along time axis
     for i in range(len(x)):
-        x[i] = (x[i] - np.mean(x[i]))/ np.std(x[i])
+        x[i] = (x[i] - np.mean(x[i]))/np.std(x[i])
     return x
 
 def fbank_to_datalabel(pth):
@@ -130,9 +136,54 @@ def fbank_to_datalabel(pth):
             'Y': labels,
             'labelranges': labelranges}
 
+def zip_to_mfcc(pth):
+    print('loading zipfile')
+    data = np.load(pth, 'r')
+    x = None
+    labels = []
+    labelranges = []
+    for k in data.files[1:]:
+        v = data[k]
+        l = k.split('/')[-1]
+        v = np.array(v)
+        v = normalize(v)
+        x = np.concatenate((x, v), 0) if x is not None else v
+        labels.extend([l]*len(v))
+        labelranges.append((l, len(labels)-len(v), len(labels)-1))
+    print('{} datapoints loaded'.format(x.shape[0]))
+    mfccs = np.zeros(shape=(x.shape[0], 99, 13))
+    print('computing mfcc features')
+    for i, timeseries in enumerate(x):
+        mfccs[i] = mfcc(timeseries)
+
+    print('done. \nreduced {}x{} dimensional timeseries to {}x{} dimensional features for {} samples'.format(
+        x.shape[1], x.shape[2], mfccs.shape[1], mfccs.shape[2], mfccs.shape[0]
+    ))
+
+    dataset = Dataset(
+        data=mfccs,
+        labels=labels,
+        labelranges=labelranges
+    )
+
+    return dataset
 
 if __name__ == '__main__':
-    # merge_set(sys.argv)
+    argv = sys.argv
+    if len(argv) > 1:
+        path = argv[1].split('/')
+    else:
+        path = './data/tf'.split('/')
+
+    # merge_set(path)
+    dataset = zip_to_mfcc('./data/npy.zip')
+    pth = './data/mfccs.pkl'
+    print('saving dataset to {}'.format(pth))
+    pkl.dump(dataset, open(pth, 'wb'))
+    subset = dataset.get_n_samples_per_class(10)
+    subset_pth = './data/mfccs_50.pkl'
+    print('saving subset to {}'.format(subset_pth))
+    pkl.dump(subset, open(subset_pth, 'wb'))
     #
     #
     # with open('./mfccs/labelranges.txt','r') as file:
@@ -150,14 +201,16 @@ if __name__ == '__main__':
     #
     # build_subset('/dev/shm/semueller/asr/npy/train_label.npy', idxs, samples_per_class=60)
 
-    path = '/home/bing/sdb/words_{}.pkl'
-    files = [
-        'fbank', 'fbank_26',
-        'mfccs', 'logfbank'
-    ]
-    format = 1
-    merged = mfcc_to_datalabel(path.format(files[format])) if files[format] == 'mfccs' else fbank_to_datalabel(path.format(files[format]))
-    print(merged.keys(), merged['labelranges'])
-    with open('/home/bing/sdb/{}.pkl'.format(files[format]), 'wb') as f:
-        pkl.dump(merged, f)
-    sys.exit(42)
+    # path[-1] = 'npy'
+    # path = '/'.join(path)
+    # print(path)
+    # files = [
+    #     'fbank', 'fbank_26',
+    #     'mfccs', 'logfbank'
+    # ]
+    # format = 2
+    # merged = mfcc_to_dataset(path.format(files[format])) if files[format] == 'mfccs' else fbank_to_datalabel(path.format(files[format]))
+    # print(merged.keys(), merged['labelranges'])
+    # with open('/home/bing/sdb/{}.pkl'.format(files[format]), 'wb') as f:
+    #     pkl.dump(merged, f)
+    sys.exit(0)
